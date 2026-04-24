@@ -87,7 +87,7 @@ def _extract_citation_urls(data: dict) -> list[str]:
         content = msg.get("content") or ""
         if isinstance(content, str):
             import re
-            urls.extend(re.findall(r"https?://[^\s\)\]]+", content))
+            urls.extend(re.findall(r"https?://[^\s\)\]\"<>]+", content))
     return urls
 
 

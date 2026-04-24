@@ -22,9 +22,9 @@ export default function ReportPage() {
     setLoading(true);
     setReport(null);
     setError(null);
-    const url = decodeURIComponent(domain).startsWith('http')
-      ? decodeURIComponent(domain)
-      : `https://${decodeURIComponent(domain)}`;
+    const decoded = decodeURIComponent(domain);
+    const hasScheme = /^https?:\/\//i.test(decoded);
+    const url = hasScheme ? decoded : `https://${decoded}`;
     scanUrl(url)
       .then((r) => {
         if (!cancelled) setReport(r);
