@@ -23,7 +23,7 @@ test.describe('share bar', () => {
     );
   });
 
-  test('"Copy link" writes the page URL and updates the button label', async ({ page }) => {
+  test('"Copy link" writes the backend /share URL so embeds render a card', async ({ page }) => {
     await page.goto('/report/stripe.com');
     await expect(page.getByTestId('score-number')).toBeVisible();
 
@@ -33,7 +33,13 @@ test.describe('share bar', () => {
     await expect(page.getByRole('button', { name: /copied/i })).toBeVisible();
 
     const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipboardText).toMatch(/\/report\/stripe\.com$/);
+    // VITE_API_BASE is set in playwright.config webServer → share URL routes
+    // through the backend /share endpoint with the report metadata encoded.
+    // Crawlers hit /share to get OG tags; humans get redirected to /report/.
+    expect(clipboardText).toMatch(/\/share\?/);
+    expect(clipboardText).toContain('d=stripe.com');
+    expect(clipboardText).toContain('s=94');
+    expect(clipboardText).toContain('g=A');
 
     // Label resets after the 1.8s timeout in ShareBar.
     await expect(page.getByRole('button', { name: /^copy link$/i })).toBeVisible({ timeout: 4_000 });
@@ -56,6 +62,8 @@ test.describe('share bar', () => {
     expect(tweet).toContain('94/100');
     expect(tweet).toContain('(A)');
     expect(tweet).toMatch(/scored 94\/100 \(A\) on \S+/);
-    expect(tweet).toContain(page.url());
+    // Tweet embeds the backend share URL (so the card renders in the tweet),
+    // not the raw SPA URL.
+    expect(tweet).toMatch(/\/share\?.*d=stripe\.com/);
   });
 });

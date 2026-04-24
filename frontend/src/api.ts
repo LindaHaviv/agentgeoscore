@@ -2,6 +2,26 @@ import type { Report } from './types';
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
 
+/** Base URL for the backend — exposed so share links resolve against the API origin. */
+export const API_BASE = BASE;
+
+/**
+ * Build a shareable URL for a report. Points at the backend `/share` route,
+ * which renders the OG meta tags crawlers need and then redirects humans to
+ * the SPA `/report/<domain>` page. Falls back to the raw SPA URL if the API
+ * base isn't configured (e.g. local dev without VITE_API_BASE set).
+ */
+export function buildShareUrl(
+  domain: string,
+  score: number,
+  grade: string,
+  fallbackUrl: string,
+): string {
+  if (!BASE) return fallbackUrl;
+  const qs = new URLSearchParams({ d: domain, s: String(score), g: grade });
+  return `${BASE.replace(/\/$/, '')}/share?${qs.toString()}`;
+}
+
 export async function scanUrl(url: string): Promise<Report> {
   const resp = await fetch(`${BASE}/api/scan`, {
     method: 'POST',
