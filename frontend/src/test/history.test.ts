@@ -108,6 +108,17 @@ describe('history', () => {
     expect(getHistory()).toHaveLength(30);
   });
 
+  it('cleans up cached reports for evicted entries', () => {
+    for (let i = 0; i < 32; i++) {
+      saveReport(makeReport({ domain: `site${i}.com` }));
+    }
+    // site0 and site1 were added first and should be evicted
+    expect(getCachedReport('site0.com')).toBeNull();
+    expect(getCachedReport('site1.com')).toBeNull();
+    // site31 was most recent and should still be cached
+    expect(getCachedReport('site31.com')).not.toBeNull();
+  });
+
   it('handles corrupted localStorage gracefully', () => {
     localStorage.setItem('agentgeoscore:history', 'NOT JSON');
     expect(getHistory()).toEqual([]);

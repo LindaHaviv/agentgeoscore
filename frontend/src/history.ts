@@ -42,6 +42,10 @@ export function saveReport(report: Report): void {
 
   const entries = readEntries().filter((e) => e.domain !== report.domain);
   entries.unshift(entry);
+  const evicted = entries.slice(MAX_ENTRIES);
+  for (const e of evicted) {
+    localStorage.removeItem(REPORT_PREFIX + e.domain);
+  }
   writeEntries(entries.slice(0, MAX_ENTRIES));
 
   localStorage.setItem(REPORT_PREFIX + report.domain, JSON.stringify(report));
