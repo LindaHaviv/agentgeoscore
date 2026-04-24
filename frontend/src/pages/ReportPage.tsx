@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { scanUrl } from '../api';
+import { buildShareUrl, scanUrl } from '../api';
 import { BRAND } from '../brand';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { FixList } from '../components/FixList';
@@ -112,8 +112,12 @@ export default function ReportPage() {
 
 function ShareBar({ report }: { report: Report }) {
   const [copied, setCopied] = useState(false);
-  const url = window.location.href;
-  const tweet = BRAND.tweetTemplate(report.domain, report.score, report.grade, url);
+  // Share link points at the backend /share route, which renders OG meta tags
+  // for crawlers (Twitter / Slack / Discord) and then redirects humans to this
+  // SPA URL. Pasting the raw SPA URL into social wouldn't produce a card
+  // because the SPA shell has no per-report meta.
+  const shareUrl = buildShareUrl(report.domain, report.score, report.grade, window.location.href);
+  const tweet = BRAND.tweetTemplate(report.domain, report.score, report.grade, shareUrl);
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`;
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -123,7 +127,7 @@ function ShareBar({ report }: { report: Report }) {
       <div className="flex gap-3">
         <button
           onClick={() => {
-            navigator.clipboard.writeText(url);
+            navigator.clipboard.writeText(shareUrl);
             setCopied(true);
             setTimeout(() => setCopied(false), 1800);
           }}
