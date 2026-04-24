@@ -10,6 +10,7 @@ import os
 import httpx
 
 from ..models import CheckResult, CheckStatus
+from ._util import host_matches as _host_matches
 
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
 MISTRAL_MODEL = "mistral-small-latest"
@@ -91,7 +92,4 @@ def _extract_citation_urls(data: dict) -> list[str]:
     return urls
 
 
-def _host_matches(url: str, host: str) -> bool:
-    if not url or not host:
-        return False
-    return host.lower().removeprefix("www.") in url.lower()
+

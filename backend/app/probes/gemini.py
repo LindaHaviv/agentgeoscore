@@ -10,6 +10,7 @@ import os
 import httpx
 
 from ..models import CheckResult, CheckStatus
+from ._util import host_matches as _host_matches
 
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = (
@@ -73,14 +74,6 @@ def _extract_citation_urls(data: dict) -> list[str]:
             if isinstance(sa, dict) and sa.get("uri"):
                 urls.append(sa["uri"])
     return urls
-
-
-def _host_matches(url: str, host: str) -> bool:
-    if not url or not host:
-        return False
-    # Cheap containment check — works for both direct URLs and Google-wrapped redirects
-    host_lower = host.lower().removeprefix("www.")
-    return host_lower in url.lower()
 
 
 def _build_result(

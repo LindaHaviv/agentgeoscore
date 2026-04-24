@@ -15,6 +15,7 @@ import re
 import httpx
 
 from ..models import CheckResult, CheckStatus
+from ._util import host_matches as _host_matches
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "compound-beta"
@@ -99,7 +100,4 @@ def _extract_citation_urls(data: dict) -> list[str]:
     return urls
 
 
-def _host_matches(url: str, host: str) -> bool:
-    if not url or not host:
-        return False
-    return host.lower().removeprefix("www.") in url.lower()
+

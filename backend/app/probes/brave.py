@@ -14,6 +14,7 @@ import os
 import httpx
 
 from ..models import CheckResult, CheckStatus
+from ._util import host_matches
 
 BRAVE_URL = "https://api.search.brave.com/res/v1/web/search"
 
@@ -55,7 +56,7 @@ async def probe_brave(queries: list[str], target_host: str) -> CheckResult:
                 rank = None
                 for i, r in enumerate(web_results, start=1):
                     url = r.get("url") or ""
-                    if target_host.lower().removeprefix("www.") in url.lower():
+                    if host_matches(url, target_host):
                         rank = i
                         break
                 if rank:

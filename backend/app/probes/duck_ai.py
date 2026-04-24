@@ -16,6 +16,7 @@ import re
 import httpx
 
 from ..models import CheckResult, CheckStatus
+from ._util import host_matches
 
 DUCK_STATUS_URL = "https://duckduckgo.com/duckchat/v1/status"
 DUCK_CHAT_URL = "https://duckduckgo.com/duckchat/v1/chat"
@@ -95,7 +96,7 @@ async def probe_duck_ai(queries: list[str], target_host: str) -> CheckResult:
                 text = _parse_sse(resp.text)
                 urls = re.findall(r"https?://[^\s\)\]\"<>]+", text)
                 cited_urls.extend(urls)
-                if any(target_host.lower().removeprefix("www.") in u.lower() for u in urls):
+                if any(host_matches(u, target_host) for u in urls):
                     hits += 1
             except httpx.HTTPError as e:
                 errors.append(f"{query!r}: {e}")
