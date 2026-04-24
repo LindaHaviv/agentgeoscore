@@ -41,7 +41,7 @@ test.describe('agentgeoscore smoke (mocked)', () => {
     await expect(page.getByPlaceholder('your-site.com')).toBeVisible();
     await expect(page.getByRole('button', { name: /score it/i })).toBeVisible();
     await expect(page.getByRole('button', { name: 'stripe.com' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'anthropic.com' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'notion.so' })).toBeVisible();
   });
 
   test('scanning stripe.com renders the fixture score card', async ({ page }) => {
