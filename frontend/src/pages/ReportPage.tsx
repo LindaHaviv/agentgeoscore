@@ -5,9 +5,11 @@ import { BRAND } from '../brand';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { FixList } from '../components/FixList';
 import { LLMSTxtCard } from '../components/LLMSTxtCard';
+import { RadarChart } from '../components/RadarChart';
 import { ScanningIndicator } from '../components/ScanningIndicator';
 import { ScoreCard } from '../components/ScoreCard';
 import { URLInput } from '../components/URLInput';
+import { saveReport } from '../history';
 import type { Report } from '../types';
 
 export default function ReportPage() {
@@ -27,7 +29,10 @@ export default function ReportPage() {
     const url = hasScheme ? decoded : `https://${decoded}`;
     scanUrl(url)
       .then((r) => {
-        if (!cancelled) setReport(r);
+        if (!cancelled) {
+          setReport(r);
+          try { saveReport(r); } catch { /* localStorage may be full */ }
+        }
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -69,6 +74,12 @@ export default function ReportPage() {
       {report && !loading && (
         <div className="animate-fade-in-up">
           <ScoreCard report={report} />
+
+          <div className="mt-16">
+            <div className="rule mb-8" />
+            <div className="kicker mb-6">chapter — at a glance</div>
+            <RadarChart categories={report.categories} />
+          </div>
 
           <div className="mt-16">
             <div className="rule mb-8" />

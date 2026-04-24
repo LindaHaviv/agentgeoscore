@@ -39,7 +39,7 @@ export function LLMSTxtCard({ content, domain }: Props) {
         <div>
           <div className="kicker mb-1.5">bonus · starter file</div>
           <h3 className="font-display text-2xl sm:text-3xl text-ink-900 tracking-tightish leading-tight">
-            Your <code className="font-mono text-[0.85em] text-terra-deep">llms.txt</code>, pre-written.
+            Your <code className="font-mono text-[0.85em] text-ink-900">llms.txt</code>, pre-written.
           </h3>
         </div>
         <div className="flex gap-2">

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { RecentScans } from '../components/RecentScans';
 import { URLInput } from '../components/URLInput';
 import { normalizeDomain } from '../api';
 
@@ -73,6 +74,8 @@ export default function HomePage() {
         <p className="font-display-italic text-ink-400 text-center max-w-xl mx-auto">
           All probes use free-tier APIs. No data stored. The source is open.
         </p>
+
+        <RecentScans />
       </div>
     </section>
   );
