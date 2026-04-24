@@ -148,3 +148,40 @@ def test_fixes_snippet_rewrites_example_com_to_target_host():
     assert jsonld_fix.snippet is not None
     assert "mysite.io" in jsonld_fix.snippet
     assert "example.com" not in jsonld_fix.snippet
+
+
+def test_every_scanner_check_id_has_matching_fix_library_entry():
+    """Regression test: every check_id emitted by scanners must either
+
+    1. have a matching FIX_LIBRARY entry, or
+    2. be deliberately allow-listed below (rare; we almost always want
+       curated snippets/docs_url instead of the generic fallback).
+
+    This catches key-mismatch bugs like the real `twitter_cards` vs
+    `twitter_card` typo where the template silently never matches and users
+    end up with a generic "Improve: X" fix instead of the curated one.
+    """
+    import re
+    from pathlib import Path
+
+    from app.fixes import FIX_LIBRARY
+
+    scanners_dir = Path(__file__).parent.parent / "app" / "scanners"
+    id_pattern = re.compile(r'''id\s*=\s*["']([a-z0-9_]+)["']''')
+
+    emitted_ids: set[str] = set()
+    for py_file in scanners_dir.glob("*.py"):
+        text = py_file.read_text()
+        emitted_ids.update(id_pattern.findall(text))
+
+    # Scanners also emit ids we don't want to match (e.g. unit-test placeholders).
+    # Keep this exclusion set deliberately empty — any id we want to skip is
+    # a smell.
+    deliberately_generic: set[str] = set()
+
+    missing = (emitted_ids - deliberately_generic) - set(FIX_LIBRARY.keys())
+    assert not missing, (
+        f"Scanner check_ids missing from FIX_LIBRARY: {sorted(missing)}. "
+        "Add an entry to backend/app/fixes.py::FIX_LIBRARY so users get a "
+        "curated fix with snippet/docs_url instead of the generic fallback."
+    )
