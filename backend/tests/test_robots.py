@@ -108,6 +108,24 @@ def test_no_robots_file_means_unblocked():
     assert is_agent_blocked(groups, "GPTBot") is False
 
 
+def test_empty_specific_group_does_not_fall_through_to_wildcard():
+    """Regression: if a bot has its own `User-agent:` group with no rules,
+    the spec says "no restrictions for this bot" — it must NOT fall
+    through to the `*` wildcard. Previously the `or` chain treated an
+    empty list as falsy and dropped into wildcard rules."""
+    robots = """
+User-agent: GPTBot
+
+User-agent: *
+Disallow: /
+"""
+    groups = parse_robots(robots)
+    # GPTBot has its own (empty) group → allowed despite wildcard Disallow:/
+    assert is_agent_blocked(groups, "GPTBot") is False
+    # Anything without its own group still falls through to `*`
+    assert is_agent_blocked(groups, "ClaudeBot") is True
+
+
 # ---------------------------------------------------------------------------
 # check_agent_access end-to-end: 404 vs non-404 fetch failure
 # ---------------------------------------------------------------------------

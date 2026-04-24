@@ -104,7 +104,12 @@ def is_agent_blocked(groups: dict[str, list[str]], agent: str) -> bool:
     overriding `Allow: /` later in the same group.
     """
     agent_key = agent.lower()
-    rules = groups.get(agent_key) or groups.get("*") or []
+    # Note: `[]` is falsy in Python — don't use `or` here, otherwise a bot
+    # with its own empty group would incorrectly fall through to the `*`
+    # wildcard rules. Per the robots.txt spec, an empty specific group means
+    # "no restrictions for this bot".
+    specific = groups.get(agent_key)
+    rules = specific if specific is not None else (groups.get("*") or [])
     blocked = False
     for entry in rules:
         field, _, value = entry.partition(":")

@@ -19,6 +19,8 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
+from .probes._util import host_matches
+
 
 def generate_llms_txt(home_html: str, origin: str, host: str) -> str:
     """Return a starter llms.txt Markdown body."""
@@ -93,7 +95,6 @@ def _collect_internal_links(
 ) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     seen: set[str] = set()
-    host_lc = host.lower().removeprefix("www.")
     for a in soup.find_all("a", href=True):
         href = a["href"].strip()
         if not href or href.startswith("#") or href.startswith("mailto:") or href.startswith("tel:"):
@@ -102,7 +103,9 @@ def _collect_internal_links(
         parsed = urlparse(abs_url)
         if not parsed.netloc:
             continue
-        if host_lc not in parsed.netloc.lower():
+        # Exact host / subdomain match — NOT substring — so scanning
+        # `box.com` doesn't pull in links to `dropbox.com`.
+        if not host_matches(abs_url, host):
             continue
         # Normalize trailing slash for dedup
         norm = abs_url.split("#", 1)[0].rstrip("/") or abs_url
