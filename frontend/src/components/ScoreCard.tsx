@@ -1,3 +1,4 @@
+import { useCountUp } from '../hooks/useCountUp';
 import type { Report } from '../types';
 
 interface Props {
@@ -29,6 +30,7 @@ const GRADE_WORD: Record<string, string> = {
 };
 
 export function ScoreCard({ report }: Props) {
+  const animatedScore = useCountUp(report.score);
   const gradeColor = GRADE_COLOR[report.grade] || GRADE_COLOR.F;
   const verdict = GRADE_VERDICT[report.grade];
   const gradeWord = GRADE_WORD[report.grade];
@@ -45,10 +47,10 @@ export function ScoreCard({ report }: Props) {
         <div className="animate-score-in">
           <div
             data-testid="score-number"
-            className={`font-display text-[7.5rem] sm:text-[10rem] leading-[0.85] ${gradeColor} tracking-tightser`}
+            className={`font-display text-[7.5rem] sm:text-[10rem] leading-[0.85] ${gradeColor} tracking-tightser tabular-nums`}
             style={{ fontVariationSettings: "'opsz' 144, 'wght' 500, 'SOFT' 30, 'WONK' 1" }}
           >
-            {report.score}
+            {animatedScore}
           </div>
         </div>
         <div className="pb-4 sm:pb-6">

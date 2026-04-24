@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ScoreCard } from '../components/ScoreCard';
 import type { Report } from '../types';
@@ -20,12 +20,14 @@ const baseReport: Report = {
 };
 
 describe('ScoreCard', () => {
-  it('renders the score, grade, and domain', () => {
+  it('renders the grade and domain immediately, score animates up', async () => {
     render(<ScoreCard report={baseReport} />);
-    expect(screen.getByText('87')).toBeInTheDocument();
     expect(screen.getByText('B')).toBeInTheDocument();
     expect(screen.getByText(/grade · strong/i)).toBeInTheDocument();
     expect(screen.getByText('example.com')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('score-number').textContent).toBe('87');
+    }, { timeout: 3000 });
   });
 
   it('renders the duration and check count', () => {
@@ -33,9 +35,12 @@ describe('ScoreCard', () => {
     expect(screen.getByText(/1234 ms/)).toBeInTheDocument();
   });
 
-  it('renders a verdict specific to the grade', () => {
+  it('renders a verdict specific to the grade', async () => {
     render(<ScoreCard report={{ ...baseReport, grade: 'F', score: 10 }} />);
     expect(screen.getByText(/Effectively invisible/i)).toBeInTheDocument();
     expect(screen.getByText(/grade · invisible/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('score-number').textContent).toBe('10');
+    }, { timeout: 3000 });
   });
 });
