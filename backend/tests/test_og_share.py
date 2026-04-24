@@ -196,3 +196,21 @@ def test_share_page_honours_x_forwarded_proto_for_og_image() -> None:
     # og:image URL must be absolute + https when the forwarded scheme says so.
     assert 'content="https://example.test/api/og?' in r.text
     assert 'content="http://example.test/api/og?' not in r.text
+
+
+def test_backend_origin_env_overrides_host_header(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A pinned BACKEND_ORIGIN wins over a spoofed Host header — prevents
+    attackers from making embeds render an og:image pointing at a host they
+    control via a crafted request."""
+    from app import main as main_mod
+
+    monkeypatch.setattr(main_mod, "BACKEND_ORIGIN", "https://pinned.example")
+    r = client.get(
+        "/share",
+        params={"d": "stripe.com", "s": 94, "g": "A"},
+        headers={"host": "attacker.test", "x-forwarded-proto": "https"},
+    )
+    assert r.status_code == 200
+    assert "https://pinned.example/api/og?" in r.text
+    # The spoofed host must NOT appear in the og:image URL.
+    assert "attacker.test/api/og" not in r.text

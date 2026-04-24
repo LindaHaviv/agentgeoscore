@@ -33,13 +33,22 @@ from .scanners import (
 from .scoring import build_category, build_fixes, grade_for, overall_score
 from .targets import WebsiteTarget
 
+# Populate os.environ from .env *before* reading any config values below, so
+# a local .env can override production defaults without needing real OS env
+# vars.
+load_dotenv()
+
 # Frontend origin to redirect humans to from the /share route.
 # Override via FRONTEND_ORIGIN env var in deploy config.
 FRONTEND_ORIGIN = os.environ.get(
     "FRONTEND_ORIGIN", "https://dist-olcivbch.devinapps.com"
 ).rstrip("/")
 
-load_dotenv()
+# Public backend origin used when composing absolute URLs in crawler-facing
+# HTML (og:image). Derived from request headers by default, but pinning it via
+# env avoids trusting a spoofable Host header for any embed that runs through
+# a social-media image proxy. Leave unset to fall back to request-derived.
+BACKEND_ORIGIN = os.environ.get("BACKEND_ORIGIN", "").rstrip("/")
 
 app = FastAPI(
     title="AgentGEOScore API",
@@ -240,16 +249,21 @@ async def share_page(
 
     # Absolute URL to the OG image. Slack/Twitter bots want absolute URLs, and
     # some (Slack) reject http:// images even when the site is served over
-    # https. Fly's edge terminates TLS and forwards X-Forwarded-Proto=https
-    # but uvicorn isn't started with --proxy-headers in the default deploy, so
-    # request.url.scheme comes back as "http". Honour X-Forwarded-Proto.
-    scheme = (
-        request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
-        or request.url.scheme
-        or "https"
-    )
-    host = request.headers.get("host") or request.url.netloc
-    base = f"{scheme}://{host}"
+    # https. Prefer an explicit BACKEND_ORIGIN env var (set in prod), else
+    # derive from the request. Fly's edge terminates TLS and forwards
+    # X-Forwarded-Proto=https but uvicorn isn't started with --proxy-headers
+    # in the default deploy, so request.url.scheme comes back as "http" —
+    # honour the forwarded scheme when falling back to request-derived base.
+    if BACKEND_ORIGIN:
+        base = BACKEND_ORIGIN
+    else:
+        scheme = (
+            request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
+            or request.url.scheme
+            or "https"
+        )
+        host = request.headers.get("host") or request.url.netloc
+        base = f"{scheme}://{host}"
     og_image_path = f"{base}/api/og?d={domain}&s={score}&g={grade}"
     report_url = f"{FRONTEND_ORIGIN}/report/{domain}"
 
