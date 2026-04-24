@@ -31,7 +31,7 @@ export default function ReportPage() {
       .then((r) => {
         if (!cancelled) {
           setReport(r);
-          saveReport(r);
+          try { saveReport(r); } catch { /* localStorage may be full */ }
         }
       })
       .catch((e: Error) => {
