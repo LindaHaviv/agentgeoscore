@@ -97,7 +97,7 @@ The dev server proxies `/api` to `http://localhost:8000` — run the backend in 
 | Content Clarity   | 15%    | `<title>` + meta description length, exactly one `<h1>`, semantic landmarks, text-to-HTML ratio |
 | Citation Probe    | 20%    | % of LLMs (Gemini, Mistral, Brave, Duck.ai, Groq) that cite the domain |
 
-Grade bands: **A** ≥ 90, **B** ≥ 75, **C** ≥ 60, **D** ≥ 45, else **F**.
+Grade bands: **A** ≥ 90, **B** ≥ 75, **C** ≥ 60, **D** ≥ 40, else **F**.
 
 ## Privacy
 

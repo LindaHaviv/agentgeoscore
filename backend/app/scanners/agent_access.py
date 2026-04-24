@@ -128,32 +128,39 @@ async def check_agent_access(target: WebsiteTarget, fetcher: Fetcher) -> list[Ch
     fetch = await fetcher.get(robots_url)
 
     if not fetch.ok or fetch.status == 404:
+        is_404 = fetch.status == 404
         # No robots.txt = permissive by default. That's actually good for agents.
+        # A non-404 failure (5xx, timeout, network error) is a real problem —
+        # AI crawlers will also fail to fetch it, and we can't know the policy.
         results.append(
             CheckResult(
                 id="robots_exists",
                 label="robots.txt reachable",
-                status=CheckStatus.WARN if fetch.status == 404 else CheckStatus.PASS,
-                score=0.8 if fetch.status == 404 else 1.0,
+                status=CheckStatus.WARN,
+                score=0.8 if is_404 else 0.4,
                 weight=0.5,
                 detail=(
                     "No robots.txt found (that's fine — means all bots allowed by default). "
                     "Consider adding one with explicit AI-bot allows so your intent is clear."
-                    if fetch.status == 404
+                    if is_404
                     else f"robots.txt fetch failed: {fetch.error or fetch.status}"
                 ),
             )
         )
-        # If we couldn't fetch, assume nothing is blocked (permissive default)
+        # 404 = no rules, permissive by default. Non-404 failure = unknown.
         results.append(
             CheckResult(
                 id="ai_bots_allowed",
                 label="Major AI bots allowed",
-                status=CheckStatus.PASS,
-                score=1.0,
+                status=CheckStatus.PASS if is_404 else CheckStatus.SKIP,
+                score=1.0 if is_404 else 0.0,
                 weight=2.0,
-                detail="No robots.txt → all AI crawlers allowed.",
-                evidence={"blocked": [], "allowed": AI_BOTS},
+                detail=(
+                    "No robots.txt → all AI crawlers allowed."
+                    if is_404
+                    else "Couldn't fetch robots.txt — AI-bot access undetermined."
+                ),
+                evidence={"blocked": [], "allowed": AI_BOTS} if is_404 else None,
             )
         )
         return results
