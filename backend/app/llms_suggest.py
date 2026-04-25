@@ -306,9 +306,12 @@ def _collect_internal_links(
         scanned_netloc = urlparse(origin).netloc.lower()
         if path in ("", "/") and parsed.netloc.lower() == scanned_netloc:
             continue
-        if _path_blocked(path):
+        # Compare against blocklists / priority paths case-insensitively so
+        # `/Login` and `/About` are treated the same as `/login` and `/about`.
+        path_lower = path.lower()
+        if _path_blocked(path_lower):
             continue
-        if any(sub in path.lower() for sub in _PATH_SUBSTRING_BLOCKLIST):
+        if any(sub in path_lower for sub in _PATH_SUBSTRING_BLOCKLIST):
             continue
 
         norm = abs_url.split("#", 1)[0].split("?", 1)[0].rstrip("/") or abs_url
@@ -320,7 +323,7 @@ def _collect_internal_links(
         if not label or _looks_like_cta(label):
             continue
 
-        score = _path_priority(path)
+        score = _path_priority(path_lower)
         candidates.append((score, pos, norm, label))
 
         if len(candidates) >= _MAX_LINKS * 4:

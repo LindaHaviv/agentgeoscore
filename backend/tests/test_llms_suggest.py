@@ -263,6 +263,35 @@ def test_rejects_cta_summary_meta_description():
     assert "Get started today." not in out
 
 
+def test_blocklist_is_case_insensitive():
+    """`/Login`, `/Privacy`, `/Terms`, `/Auth/callback` should be filtered
+    even though the blocklist entries are lowercase."""
+    html = """
+    <html><head><title>Acme</title></head><body>
+      <a href="/Login">Sign in</a>
+      <a href="/Privacy">Privacy</a>
+      <a href="/Terms">Terms</a>
+      <a href="/Auth/callback">OAuth callback</a>
+      <a href="/Pricing">Pricing</a>
+      <a href="/About">About us</a>
+      <a href="/blog/intro">Intro post</a>
+    </body></html>
+    """
+    out = generate_llms_txt(html, "https://acme.example", "acme.example")
+    assert "/Login" not in out
+    assert "/Privacy" not in out
+    assert "/Terms" not in out
+    assert "/Auth/callback" not in out
+    # And uppercase priority paths still get the priority-0 boost — they
+    # appear at the top of Key pages, ahead of /blog/intro.
+    pricing_idx = out.find("/Pricing")
+    about_idx = out.find("/About")
+    blog_idx = out.find("/blog/intro")
+    assert pricing_idx > 0 and about_idx > 0 and blog_idx > 0
+    assert pricing_idx < blog_idx
+    assert about_idx < blog_idx
+
+
 def test_blocklist_prefix_does_not_swallow_word_boundaries():
     """`/auth` in the blocklist must NOT also block `/author`/`/authors`/
     `/authority`. Same for `/account` vs `/accounting`."""
