@@ -306,7 +306,7 @@ def _collect_internal_links(
         scanned_netloc = urlparse(origin).netloc.lower()
         if path in ("", "/") and parsed.netloc.lower() == scanned_netloc:
             continue
-        if any(path.startswith(prefix) for prefix in _PATH_BLOCKLIST):
+        if _path_blocked(path):
             continue
         if any(sub in path.lower() for sub in _PATH_SUBSTRING_BLOCKLIST):
             continue
@@ -408,6 +408,19 @@ def _has_internal_sentence_break(text: str) -> bool:
     last char — i.e. multiple sentences glued together."""
     stripped = text.rstrip(".!?")
     return bool(re.search(r"[.!?]\s+\S", stripped))
+
+
+def _path_blocked(path: str) -> bool:
+    """True if the path matches any blocklist prefix at a segment boundary.
+
+    Bare `path.startswith("/auth")` would erroneously block `/author`,
+    `/authors`, `/authority`, `/accounting`, etc. Match only at `/` or `.`
+    boundaries (or whole-path equality) so legitimate pages survive.
+    """
+    for prefix in _PATH_BLOCKLIST:
+        if path == prefix or path.startswith(prefix + "/") or path.startswith(prefix + "."):
+            return True
+    return False
 
 
 def _path_priority(path: str) -> int:

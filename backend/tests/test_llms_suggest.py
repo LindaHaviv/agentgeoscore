@@ -263,6 +263,29 @@ def test_rejects_cta_summary_meta_description():
     assert "Get started today." not in out
 
 
+def test_blocklist_prefix_does_not_swallow_word_boundaries():
+    """`/auth` in the blocklist must NOT also block `/author`/`/authors`/
+    `/authority`. Same for `/account` vs `/accounting`."""
+    html = """
+    <html><head><title>Acme</title></head><body>
+      <a href="/author">Author bio</a>
+      <a href="/authors">Authors index</a>
+      <a href="/authority">Editorial authority</a>
+      <a href="/accounting">Accounting basics</a>
+      <a href="/auth/callback">OAuth callback</a>
+      <a href="/account">Account home</a>
+    </body></html>
+    """
+    out = generate_llms_txt(html, "https://acme.example", "acme.example")
+    assert "/author" in out
+    assert "/authors" in out
+    assert "/authority" in out
+    assert "/accounting" in out
+    # Real auth + account paths are still blocked.
+    assert "/auth/callback" not in out
+    assert "[Account home]" not in out
+
+
 def test_off_host_links_excluded():
     html = """
     <html><head><title>Acme</title></head><body>
