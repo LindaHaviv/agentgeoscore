@@ -51,6 +51,6 @@ test.describe('keyboard navigation', () => {
     await expect(page.getByRole('button', { name: 'shopify.com' })).toBeFocused();
 
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'notion.so' })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'devin.ai' })).toBeFocused();
   });
 });

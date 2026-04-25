@@ -55,7 +55,7 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
       {!compact && (
         <div className="mt-4 flex flex-wrap gap-3 justify-center text-sm text-ink-400">
           <span className="kicker !text-[0.65rem] !tracking-[0.2em]">also try</span>
-          {['stripe.com', 'shopify.com', 'notion.so'].map((ex) => (
+          {['stripe.com', 'shopify.com', 'devin.ai'].map((ex) => (
             <button
               key={ex}
               type="button"
