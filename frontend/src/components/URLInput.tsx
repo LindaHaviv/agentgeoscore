@@ -52,25 +52,6 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
           {disabled ? 'Scanning…' : 'Score it'}
         </button>
       </div>
-      {!compact && (
-        <div className="mt-4 flex flex-wrap gap-3 justify-center text-sm text-ink-400">
-          <span className="kicker !text-[0.65rem] !tracking-[0.2em]">also try</span>
-          {['stripe.com', 'vercel.com', 'anthropic.com'].map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                setValue(ex);
-                onSubmit(ex);
-              }}
-              className="under-dot font-mono text-xs text-ink-500 disabled:opacity-40"
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
-      )}
     </form>
   );
 }
