@@ -41,24 +41,24 @@ function CategoryRow({ category, last }: { category: CategoryResult; last: boole
     <div className={`${last ? '' : 'border-b border-rule'}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full py-5 flex items-start gap-6 text-left group"
+        className="w-full py-5 flex items-start gap-3 sm:gap-6 text-left group"
       >
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline justify-between gap-6 mb-3">
-            <h3 className="font-display text-2xl text-ink-900 tracking-tightish flex items-center gap-3">
-              {category.label}
+          <div className="flex items-baseline justify-between gap-3 sm:gap-6 mb-3">
+            <h3 className="font-display text-xl sm:text-2xl text-ink-900 tracking-tightish flex items-center flex-wrap gap-x-3 gap-y-1 min-w-0">
+              <span>{category.label}</span>
               {allSkipped && (
                 <span className="kicker !text-[0.6rem] !tracking-[0.18em] border border-rule px-2 py-0.5 rounded-full">
                   skipped
                 </span>
               )}
             </h3>
-            <div className="flex items-baseline gap-3 whitespace-nowrap">
+            <div className="flex items-baseline gap-2 sm:gap-3 whitespace-nowrap shrink-0">
               {allSkipped ? (
                 <span className="font-display-italic text-ink-400 text-lg">not scored</span>
               ) : (
                 <>
-                  <span className="font-display text-3xl text-ink-900 tabular-nums">{score}</span>
+                  <span className="font-display text-2xl sm:text-3xl text-ink-900 tabular-nums">{score}</span>
                   <span className="font-mono text-xs text-ink-400">/ 100</span>
                 </>
               )}
