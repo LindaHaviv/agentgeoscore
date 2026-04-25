@@ -40,17 +40,8 @@ test.describe('keyboard navigation', () => {
     // via Tab. A disabled button is not focusable and browsers skip it.
     await input.fill('stripe.com');
 
-    // Tab forward: submit → example-site buttons in DOM order.
+    // Tab forward: input → submit button.
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /score it/i })).toBeFocused();
-
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'stripe.com' })).toBeFocused();
-
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'shopify.com' })).toBeFocused();
-
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'devin.ai' })).toBeFocused();
   });
 });

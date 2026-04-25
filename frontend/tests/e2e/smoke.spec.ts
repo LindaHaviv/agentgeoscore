@@ -40,15 +40,14 @@ test.describe('agentgeoscore smoke (mocked)', () => {
     ).toBeVisible();
     await expect(page.getByPlaceholder('your-site.com')).toBeVisible();
     await expect(page.getByRole('button', { name: /score it/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'stripe.com' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'devin.ai' })).toBeVisible();
   });
 
   test('scanning stripe.com renders the fixture score card', async ({ page }) => {
     await page.route(SCAN_ENDPOINT, (route) => mockScan(route, stripeReport));
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'stripe.com' }).click();
+    await page.getByPlaceholder('your-site.com').fill('stripe.com');
+    await page.getByRole('button', { name: /score it/i }).click();
 
     await expect(page).toHaveURL(/\/report\/stripe\.com$/);
 
