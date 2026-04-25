@@ -24,7 +24,7 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
         }`}
       >
         <div
-          className={`pl-5 flex items-center text-ink-400 font-mono select-none ${
+          className={`hidden sm:flex pl-5 items-center text-ink-400 font-mono select-none ${
             compact ? 'text-xs' : 'text-sm'
           }`}
         >
@@ -36,7 +36,7 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
           value={value}
           onChange={(e) => setValue(e.target.value)}
           disabled={disabled}
-          className={`flex-1 bg-transparent px-3 text-ink-900 placeholder-ink-300 focus:outline-none ${
+          className={`flex-1 min-w-0 bg-transparent px-3 sm:px-3 pl-4 text-ink-900 placeholder-ink-300 focus:outline-none ${
             compact ? 'py-3' : 'py-5'
           }`}
           autoFocus
@@ -45,32 +45,13 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
         <button
           type="submit"
           disabled={disabled || !value.trim()}
-          className={`bg-ink-900 text-paper font-medium font-display tracking-tightish disabled:opacity-30 disabled:cursor-not-allowed hover:bg-terra-deep transition ${
-            compact ? 'px-5 text-sm' : 'px-7 text-base'
+          className={`shrink-0 bg-ink-900 text-paper font-medium font-display tracking-tightish disabled:opacity-30 disabled:cursor-not-allowed hover:bg-terra-deep transition ${
+            compact ? 'px-3 sm:px-5 text-sm' : 'px-4 sm:px-7 text-sm sm:text-base'
           }`}
         >
           {disabled ? 'Scanning…' : 'Score it'}
         </button>
       </div>
-      {!compact && (
-        <div className="mt-4 flex flex-wrap gap-3 justify-center text-sm text-ink-400">
-          <span className="kicker !text-[0.65rem] !tracking-[0.2em]">also try</span>
-          {['stripe.com', 'vercel.com', 'anthropic.com'].map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                setValue(ex);
-                onSubmit(ex);
-              }}
-              className="under-dot font-mono text-xs text-ink-500 disabled:opacity-40"
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
-      )}
     </form>
   );
 }

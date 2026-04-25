@@ -20,7 +20,8 @@ test.describe('navigation', () => {
     );
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'stripe.com' }).click();
+    await page.getByPlaceholder('your-site.com').fill('stripe.com');
+    await page.getByRole('button', { name: /score it/i }).click();
     await expect(page).toHaveURL(/\/report\/stripe\.com$/);
     await expect(page.getByTestId('score-number')).toBeVisible();
 
