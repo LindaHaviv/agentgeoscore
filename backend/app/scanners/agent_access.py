@@ -31,6 +31,7 @@ AI_BOTS = [
     "OAI-SearchBot",
     "ClaudeBot",
     "Claude-Web",
+    "anthropic-ai",
     "PerplexityBot",
     "Perplexity-User",
     "Google-Extended",
@@ -42,6 +43,7 @@ AI_BOTS = [
     "Meta-ExternalAgent",
     "DuckAssistBot",
     "YouBot",
+    "Diffbot",
     "FacebookBot",
 ]
 

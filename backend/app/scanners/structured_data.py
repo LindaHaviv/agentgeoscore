@@ -192,4 +192,164 @@ def check_structured_data(html: str) -> list[CheckResult]:
         )
     )
 
+    # Author Person schema with sameAs (E-E-A-T canonical signal)
+    results.append(_check_person_sameas(jsonld))
+
+    # dateModified on Article-type schema (freshness signal)
+    results.append(_check_jsonld_datemodified(jsonld))
+
     return results
+
+
+_ARTICLE_TYPES = {"Article", "BlogPosting", "NewsArticle", "TechArticle", "ScholarlyArticle", "Report"}
+
+
+def _walk_jsonld(blocks: list[dict]):
+    """Yield every dict node anywhere in the JSON-LD graph (incl. nested)."""
+    def walk(node):
+        if isinstance(node, dict):
+            yield node
+            for v in node.values():
+                yield from walk(v)
+        elif isinstance(node, list):
+            for item in node:
+                yield from walk(item)
+    for block in blocks:
+        yield from walk(block)
+
+
+def _has_article_type(blocks: list[dict]) -> bool:
+    for node in _walk_jsonld(blocks):
+        t = node.get("@type")
+        if isinstance(t, str) and t in _ARTICLE_TYPES:
+            return True
+        if isinstance(t, list) and any(x in _ARTICLE_TYPES for x in t):
+            return True
+    return False
+
+
+def _find_persons(blocks: list[dict]) -> list[dict]:
+    """Return Person nodes anywhere in the JSON-LD graph."""
+    out: list[dict] = []
+    for node in _walk_jsonld(blocks):
+        t = node.get("@type")
+        if t == "Person" or (isinstance(t, list) and "Person" in t):
+            out.append(node)
+    return out
+
+
+def _sameas_links(person: dict) -> list[str]:
+    sa = person.get("sameAs")
+    if isinstance(sa, list):
+        return [x for x in sa if isinstance(x, str) and x.strip()]
+    if isinstance(sa, str) and sa.strip():
+        return [sa.strip()]
+    return []
+
+
+def _check_person_sameas(jsonld: list[dict]) -> CheckResult:
+    """Score Person schema + sameAs links — Google's canonical E-E-A-T signal."""
+    persons = _find_persons(jsonld)
+    if not persons:
+        return CheckResult(
+            id="person_schema_sameas",
+            label="Author Person schema with sameAs links",
+            status=CheckStatus.SKIP,
+            score=0.0,
+            weight=0.8,
+            detail="No Person JSON-LD on this page. If you publish bylined articles, add a Person block per author with sameAs links.",
+        )
+
+    best = max((len(_sameas_links(p)) for p in persons), default=0)
+    named = next((p.get("name") for p in persons if isinstance(p.get("name"), str)), None)
+    label_suffix = f" (e.g. {named})" if named else ""
+
+    if best >= 2:
+        return CheckResult(
+            id="person_schema_sameas",
+            label="Author Person schema with sameAs links",
+            status=CheckStatus.PASS,
+            score=1.0,
+            weight=1.0,
+            detail=f"Person schema with {best} sameAs link(s){label_suffix}. Strong E-E-A-T author-authority signal.",
+            evidence={"sameAs_count": best},
+        )
+    if best == 1:
+        return CheckResult(
+            id="person_schema_sameas",
+            label="Author Person schema with sameAs links",
+            status=CheckStatus.WARN,
+            score=0.5,
+            weight=1.0,
+            detail=f"Person schema present but only one sameAs link{label_suffix}. Add 2+ profile URLs (LinkedIn, X, GitHub, ORCID) for full E-E-A-T credit.",
+            evidence={"sameAs_count": best},
+        )
+    return CheckResult(
+        id="person_schema_sameas",
+        label="Author Person schema with sameAs links",
+        status=CheckStatus.WARN,
+        score=0.3,
+        weight=1.0,
+        detail=f"Person schema present but no sameAs links{label_suffix}. Add LinkedIn, X, GitHub, or ORCID URLs so AI engines can verify authorship.",
+        evidence={"sameAs_count": 0, "person_count": len(persons)},
+    )
+
+
+def _check_jsonld_datemodified(jsonld: list[dict]) -> CheckResult:
+    """Score dateModified presence on Article-type schema (freshness gate)."""
+    if not _has_article_type(jsonld):
+        return CheckResult(
+            id="freshness_datemodified",
+            label="dateModified on Article schema",
+            status=CheckStatus.SKIP,
+            score=0.0,
+            weight=0.7,
+            detail="No Article/BlogPosting/NewsArticle JSON-LD on this page. If this is a marketing homepage, that's fine — rescan an article URL for this check.",
+        )
+
+    has_modified = False
+    has_published = False
+    sample: str = ""
+    for node in _walk_jsonld(jsonld):
+        t = node.get("@type")
+        is_article = (isinstance(t, str) and t in _ARTICLE_TYPES) or (
+            isinstance(t, list) and any(x in _ARTICLE_TYPES for x in t)
+        )
+        if not is_article:
+            continue
+        dm = node.get("dateModified")
+        dp = node.get("datePublished")
+        if isinstance(dm, str) and dm.strip():
+            has_modified = True
+            sample = dm.strip()
+        if isinstance(dp, str) and dp.strip():
+            has_published = True
+            if not sample:
+                sample = dp.strip()
+
+    if has_modified:
+        return CheckResult(
+            id="freshness_datemodified",
+            label="dateModified on Article schema",
+            status=CheckStatus.PASS,
+            score=1.0,
+            weight=0.7,
+            detail=f"Article schema declares dateModified ({sample}). Strong freshness signal for AI ranking.",
+        )
+    if has_published:
+        return CheckResult(
+            id="freshness_datemodified",
+            label="dateModified on Article schema",
+            status=CheckStatus.WARN,
+            score=0.6,
+            weight=0.7,
+            detail=f"datePublished present ({sample}) but no dateModified. Add dateModified so AI engines can tell when content was last refreshed.",
+        )
+    return CheckResult(
+        id="freshness_datemodified",
+        label="dateModified on Article schema",
+        status=CheckStatus.FAIL,
+        score=0.2,
+        weight=0.7,
+        detail="Article schema present but no dateModified or datePublished. Adding both lifts AI citation rate ~34% (Seenos audit, 2026).",
+    )
