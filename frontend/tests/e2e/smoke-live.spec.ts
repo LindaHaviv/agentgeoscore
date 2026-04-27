@@ -21,7 +21,8 @@ const SCORE_TIMEOUT = 45_000;
 test.describe('agentgeoscore smoke-live', () => {
   test('scanning stripe.com produces a real A-range score', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'stripe.com' }).click();
+    await page.getByPlaceholder('your-site.com').fill('stripe.com');
+    await page.getByRole('button', { name: /score it/i }).click();
 
     await expect(page).toHaveURL(/\/report\/stripe\.com$/);
 
