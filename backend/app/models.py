@@ -68,6 +68,49 @@ class ScanRequest(BaseModel):
     include_probe: bool = True
 
 
+class DetectedCategory(BaseModel):
+    """Auto-detected vertical for the scanned site.
+
+    The user can override this from the UI; the override is round-tripped
+    through ``GET /api/test-prompts`` and the resulting bundle has
+    ``confidence == "high"`` and ``signals == ["user override"]``.
+    """
+
+    slug: str
+    label: str
+    persona: str
+    confidence: Literal["high", "medium", "low"]
+    signals: list[str] = Field(default_factory=list)
+
+
+class PromptDeepLinks(BaseModel):
+    """Pre-filled deep-link URLs for each AI search platform."""
+
+    chatgpt: str
+    perplexity: str
+    claude: str
+    google_ai: str
+
+
+class TestPrompt(BaseModel):
+    """A single AI-search prompt to test the site's visibility."""
+
+    angle: Literal["category", "use_case", "comparison", "long_tail"]
+    label: str
+    text: str
+    rationale: str
+    deep_links: PromptDeepLinks
+
+
+class TestPromptsBundle(BaseModel):
+    """Bundle of AI-search test prompts attached to every scan report."""
+
+    detected_category: DetectedCategory
+    brand: str
+    prompts: list[TestPrompt]
+    all_categories: list[dict] = Field(default_factory=list)
+
+
 class Report(BaseModel):
     url: str
     normalized_url: str
@@ -79,4 +122,5 @@ class Report(BaseModel):
     categories: list[CategoryResult]
     fixes: list[Fix]
     suggested_llms_txt: str = ""
+    test_prompts: TestPromptsBundle | None = None
     errors: list[str] = Field(default_factory=list)

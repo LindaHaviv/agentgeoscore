@@ -8,6 +8,7 @@ import { LLMSTxtCard } from '../components/LLMSTxtCard';
 import { RecommendationsCard } from '../components/RecommendationsCard';
 import { ScanningIndicator } from '../components/ScanningIndicator';
 import { ScoreCard } from '../components/ScoreCard';
+import { TestPromptsCard } from '../components/TestPromptsCard';
 import { URLInput } from '../components/URLInput';
 import type { Report } from '../types';
 
@@ -92,6 +93,17 @@ export default function ReportPage() {
               <div className="rule mb-8" />
               <div className="kicker mb-6">chapter — your drop-in llms.txt</div>
               <LLMSTxtCard content={report.suggested_llms_txt} domain={report.domain} />
+            </div>
+          )}
+
+          {report.test_prompts && (
+            <div className="mt-16">
+              <div className="rule mb-8" />
+              <div className="kicker mb-6">chapter — test it yourself</div>
+              <TestPromptsCard
+                bundle={report.test_prompts}
+                domain={report.domain}
+              />
             </div>
           )}
 

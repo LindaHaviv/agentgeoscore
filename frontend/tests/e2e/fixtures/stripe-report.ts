@@ -389,5 +389,70 @@ export const stripeReport: Report = {
     }
   ],
   "suggested_llms_txt": "# Stripe\n> Financial infrastructure for the internet.\n\n## Key pages\n- [/docs](/docs): documentation\n- [/pricing](/pricing): pricing\n",
+  "test_prompts": {
+    "detected_category": {
+      "slug": "fintech-payments",
+      "label": "payments / fintech",
+      "persona": "developers building checkout",
+      "confidence": "high",
+      "signals": ["nav link: /payments", "keyword: 'payment'"]
+    },
+    "brand": "Stripe",
+    "prompts": [
+      {
+        "angle": "category",
+        "label": "Category recommendation",
+        "text": "What's the best payment processor for developers building checkout in 2026?",
+        "rationale": "Tests whether AI engines list you among top picks.",
+        "deep_links": {
+          "chatgpt": "https://chatgpt.com/?q=test",
+          "perplexity": "https://www.perplexity.ai/search?q=test",
+          "claude": "https://claude.ai/new?q=test",
+          "google_ai": "https://www.google.com/search?q=test&udm=50"
+        }
+      },
+      {
+        "angle": "use_case",
+        "label": "Use-case discovery",
+        "text": "How do I accept credit cards online?",
+        "rationale": "Tests use-case discovery.",
+        "deep_links": {
+          "chatgpt": "https://chatgpt.com/?q=u",
+          "perplexity": "https://www.perplexity.ai/search?q=u",
+          "claude": "https://claude.ai/new?q=u",
+          "google_ai": "https://www.google.com/search?q=u&udm=50"
+        }
+      },
+      {
+        "angle": "comparison",
+        "label": "Comparison",
+        "text": "Stripe vs alternatives — which is best for developers building checkout?",
+        "rationale": "Tests head-to-head framing.",
+        "deep_links": {
+          "chatgpt": "https://chatgpt.com/?q=c",
+          "perplexity": "https://www.perplexity.ai/search?q=c",
+          "claude": "https://claude.ai/new?q=c",
+          "google_ai": "https://www.google.com/search?q=c&udm=50"
+        }
+      },
+      {
+        "angle": "long_tail",
+        "label": "Long-tail / persona",
+        "text": "Recommend a payment processor for a SaaS founder handling subscription billing.",
+        "rationale": "Tests persona-specific intent.",
+        "deep_links": {
+          "chatgpt": "https://chatgpt.com/?q=l",
+          "perplexity": "https://www.perplexity.ai/search?q=l",
+          "claude": "https://claude.ai/new?q=l",
+          "google_ai": "https://www.google.com/search?q=l&udm=50"
+        }
+      }
+    ],
+    "all_categories": [
+      { "slug": "fintech-payments", "label": "payments / fintech" },
+      { "slug": "b2b-saas", "label": "B2B SaaS" },
+      { "slug": "ai-tools", "label": "AI / ML tools" }
+    ]
+  },
   "errors": []
 };
