@@ -113,14 +113,27 @@ def _main_container(soup: BeautifulSoup) -> Tag:
 
 
 def _has_article_jsonld(jsonld_blocks: list[dict]) -> bool:
+    """Walk the entire JSON-LD graph for any Article-type node.
+
+    Articles are commonly nested (CMS pattern: ``{"@type":"WebPage",
+    "mainEntity":{"@type":"Article",...}}``). Top-level-only checks would
+    incorrectly miss those and SKIP the freshness check downstream.
+    """
     article_types = {"Article", "BlogPosting", "NewsArticle", "TechArticle", "ScholarlyArticle", "Report"}
-    for block in jsonld_blocks:
-        t = block.get("@type")
-        if isinstance(t, str) and t in article_types:
-            return True
-        if isinstance(t, list) and any(x in article_types for x in t):
-            return True
-    return False
+
+    def walk(node) -> bool:
+        if isinstance(node, dict):
+            t = node.get("@type")
+            if isinstance(t, str) and t in article_types:
+                return True
+            if isinstance(t, list) and any(x in article_types for x in t):
+                return True
+            return any(walk(v) for v in node.values())
+        if isinstance(node, list):
+            return any(walk(item) for item in node)
+        return False
+
+    return any(walk(block) for block in jsonld_blocks)
 
 
 def _find_persons(jsonld_blocks: list[dict]) -> list[dict]:
