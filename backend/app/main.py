@@ -34,6 +34,7 @@ from .scanners import (
 )
 from .scoring import build_category, build_fixes, grade_for, overall_score
 from .targets import WebsiteTarget
+from .test_prompts import build_test_prompts_bundle, list_categories
 
 # Populate os.environ from .env *before* reading any config values below, so
 # a local .env can override production defaults without needing real OS env
@@ -159,6 +160,8 @@ async def scan(req: ScanRequest) -> Report:
     grade = grade_for(score)
     fixes = build_fixes(categories, target.host)
     suggested_llms_txt = generate_llms_txt(home_html, target.origin, target.host)
+    # Build AI-search test prompts from the same parse outputs — no extra fetch.
+    test_prompts = build_test_prompts_bundle(home_html, jsonld_blocks, target.host)
 
     return Report(
         url=str(req.url),
@@ -171,8 +174,42 @@ async def scan(req: ScanRequest) -> Report:
         categories=categories,
         fixes=fixes,
         suggested_llms_txt=suggested_llms_txt,
+        test_prompts=test_prompts,
         errors=errors,
     )
+
+
+@app.get("/api/test-prompts/categories")
+async def test_prompt_categories() -> dict:
+    """Public list of selectable categories for the override dropdown."""
+    return {"categories": list_categories()}
+
+
+@app.get("/api/test-prompts")
+async def test_prompts_override(
+    domain: str = Query(..., min_length=1, max_length=253),
+    category: str = Query(..., min_length=1, max_length=64),
+) -> dict:
+    """Re-roll test prompts for a different category without re-scanning.
+
+    The frontend calls this when the user picks a different vertical from
+    the override dropdown. We re-fetch the homepage to re-derive the brand
+    name, but skip the full scan — the only signals we need from the page
+    are the brand name and (for fallback detection) the page title.
+    """
+    try:
+        target = WebsiteTarget.from_url(domain if "://" in domain else f"https://{domain}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    async with Fetcher() as fetcher:
+        home = await fetcher.get(target.url)
+        home_html = home.text if home.ok else ""
+        jsonld_blocks = extract_jsonld(home_html)
+        bundle = build_test_prompts_bundle(
+            home_html, jsonld_blocks, target.host, category_override=category
+        )
+    return bundle.model_dump()
 
 
 _ALLOWED_GRADES = {"A", "B", "C", "D", "F"}

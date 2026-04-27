@@ -41,6 +41,43 @@ export interface Fix {
   docs_url?: string | null;
 }
 
+export interface DetectedCategory {
+  slug: string;
+  label: string;
+  persona: string;
+  confidence: 'high' | 'medium' | 'low';
+  signals: string[];
+}
+
+export interface PromptDeepLinks {
+  chatgpt: string;
+  perplexity: string;
+  claude: string;
+  google_ai: string;
+}
+
+export type PromptAngle = 'category' | 'use_case' | 'comparison' | 'long_tail';
+
+export interface TestPrompt {
+  angle: PromptAngle;
+  label: string;
+  text: string;
+  rationale: string;
+  deep_links: PromptDeepLinks;
+}
+
+export interface CategoryOption {
+  slug: string;
+  label: string;
+}
+
+export interface TestPromptsBundle {
+  detected_category: DetectedCategory;
+  brand: string;
+  prompts: TestPrompt[];
+  all_categories: CategoryOption[];
+}
+
 export interface Report {
   url: string;
   normalized_url: string;
@@ -52,5 +89,6 @@ export interface Report {
   categories: CategoryResult[];
   fixes: Fix[];
   suggested_llms_txt: string;
+  test_prompts?: TestPromptsBundle | null;
   errors: string[];
 }

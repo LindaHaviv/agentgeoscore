@@ -1,4 +1,4 @@
-import type { Report } from './types';
+import type { Report, TestPromptsBundle } from './types';
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
 
@@ -44,4 +44,27 @@ export async function scanUrl(url: string): Promise<Report> {
 export function normalizeDomain(input: string): string {
   const cleaned = input.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   return cleaned.toLowerCase();
+}
+
+/**
+ * Re-roll the AI-search test prompts for a different category override
+ * without re-running the full scan. Used by the override dropdown.
+ */
+export async function fetchTestPromptsForCategory(
+  domain: string,
+  category: string,
+): Promise<TestPromptsBundle> {
+  const qs = new URLSearchParams({ domain, category });
+  const resp = await fetch(`${BASE}/api/test-prompts?${qs.toString()}`);
+  if (!resp.ok) {
+    let detail = `HTTP ${resp.status}`;
+    try {
+      const body = await resp.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // ignore
+    }
+    throw new Error(detail);
+  }
+  return (await resp.json()) as TestPromptsBundle;
 }

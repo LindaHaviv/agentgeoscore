@@ -68,6 +68,36 @@ test.describe('agentgeoscore smoke (mocked)', () => {
     await expect(page.getByTestId('score-number')).toHaveText('94');
     await expect(page.getByTestId('score-grade')).toHaveText('A');
   });
+
+  test('renders the AI-search test-prompts card with platform deep-links', async ({ page }) => {
+    await page.route(SCAN_ENDPOINT, (route) => mockScan(route, stripeReport));
+
+    await page.goto('/report/stripe.com');
+
+    // Card title + detected category appear.
+    await expect(page.getByRole('heading', { name: /test it yourself/i })).toBeVisible();
+    await expect(page.getByText(/payments \/ fintech/i).first()).toBeVisible();
+
+    // The four prompt angles are all rendered.
+    await expect(page.getByText(/Category recommendation/i).first()).toBeVisible();
+    await expect(page.getByText(/Use-case discovery/i).first()).toBeVisible();
+    await expect(page.getByText(/Long-tail/i).first()).toBeVisible();
+
+    // Each prompt has all four platform deep-links — we expect 4 prompts × 4 = 16.
+    await expect(page.getByRole('link', { name: /ChatGPT/i })).toHaveCount(4);
+    await expect(page.getByRole('link', { name: /Perplexity/i })).toHaveCount(4);
+    await expect(page.getByRole('link', { name: /Claude/i })).toHaveCount(4);
+    await expect(page.getByRole('link', { name: /Google AI/i })).toHaveCount(4);
+
+    // Deep-links open externally and target the documented endpoints.
+    const chatgpt = page.getByRole('link', { name: /ChatGPT/i }).first();
+    await expect(chatgpt).toHaveAttribute('target', '_blank');
+    await expect(chatgpt).toHaveAttribute('href', /^https:\/\/chatgpt\.com\//);
+    await expect(page.getByRole('link', { name: /Google AI/i }).first()).toHaveAttribute(
+      'href',
+      /udm=50/,
+    );
+  });
 });
 
 test.describe('agentgeoscore smoke (error paths, mocked)', () => {
