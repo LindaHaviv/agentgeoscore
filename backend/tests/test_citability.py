@@ -254,6 +254,29 @@ def test_freshness_pass_with_day_month_year_format():
     assert out["freshness_visible_updated"].status.value == "pass"
 
 
+def test_freshness_pass_when_article_is_nested_inside_webpage_jsonld():
+    """Common CMS pattern: Article schema nested under WebPage.mainEntity.
+
+    Regression for the original `_has_article_jsonld` that only walked the
+    top-level — that version would SKIP this case because the outer @type
+    is "WebPage", even though an Article is one level down.
+    """
+    html = """<html><head>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage",
+ "mainEntity":{"@type":"Article","headline":"X",
+               "dateModified":"2026-04-20"}}
+</script></head><body>
+<h1>Post</h1>
+<p>Updated April 20, 2026 — by Jane.</p>
+<time datetime="2026-04-20">April 20, 2026</time>
+<p>Body.</p>
+</body></html>"""
+    out = _run(html)
+    # Article-type detected via deep walk, so freshness check runs (not SKIP)
+    assert out["freshness_visible_updated"].status.value == "pass"
+
+
 def test_freshness_skip_on_marketing_homepage():
     """Pages without an <article> or Article schema should SKIP, not penalize."""
     html = """<html><body>
