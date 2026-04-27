@@ -58,13 +58,40 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
 User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
 Allow: /
 
 User-agent: Google-Extended
 Allow: /
 
 User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: Diffbot
 Allow: /
 
 Sitemap: https://example.com/sitemap.xml
@@ -83,6 +110,98 @@ JSONLD_ORG_SNIPPET = """<script type="application/ld+json">
   ]
 }
 </script>"""
+
+JSONLD_PERSON_SNIPPET = """<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Jane Doe",
+  "url": "https://example.com/author/jane-doe",
+  "jobTitle": "Senior Engineer",
+  "worksFor": { "@type": "Organization", "name": "Your Org" },
+  "sameAs": [
+    "https://www.linkedin.com/in/janedoe",
+    "https://github.com/janedoe",
+    "https://twitter.com/janedoe"
+  ]
+}
+</script>"""
+
+JSONLD_ARTICLE_DATEMODIFIED_SNIPPET = """<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Your article title",
+  "datePublished": "2025-01-15T08:00:00+00:00",
+  "dateModified": "2026-04-20T10:30:00+00:00",
+  "author": {
+    "@type": "Person",
+    "name": "Jane Doe",
+    "url": "https://example.com/author/jane-doe"
+  }
+}
+</script>
+<!-- Plus a visible date line in your article body: -->
+<p class="byline">
+  By <a rel="author" href="/author/jane-doe">Jane Doe</a> ·
+  <time datetime="2026-04-20">Updated April 2026</time>
+</p>"""
+
+BYLINE_LINK_SNIPPET = """<!-- Make every byline a real link to a credentialed author page -->
+<p class="byline">
+  By <a rel="author" href="/author/jane-doe">Jane Doe</a>
+  · <time datetime="2026-04-20">April 20, 2026</time>
+</p>
+
+<!-- And populate /author/jane-doe with a real bio + sameAs Person schema. -->"""
+
+OUTBOUND_CITATIONS_SNIPPET = """<!-- Cite credible external sources inline; AI engines weight these heavily. -->
+<p>
+  According to a
+  <a href="https://www.example-research.org/study">2025 longitudinal study</a>,
+  …
+</p>
+
+<!-- Or use a footnote-style reference list at the end: -->
+<section aria-label="References">
+  <h2>References</h2>
+  <ol>
+    <li><a href="https://arxiv.org/abs/2311.09735">Aggarwal et al., GEO: Generative Engine Optimization (2024)</a></li>
+    <li><a href="https://schema.org/Person">schema.org Person spec</a></li>
+  </ol>
+</section>"""
+
+QUOTATION_SNIPPET = """<!-- Direct quotations from credible sources are cited disproportionately. -->
+<blockquote cite="https://www.example.com/source">
+  <p>"The single highest-leverage technical signal that determines AI citation
+  eligibility is well-formed structured data."</p>
+  <footer>— <cite><a href="https://www.example.com/source">Original source</a></cite></footer>
+</blockquote>"""
+
+FANOUT_H2_SNIPPET = """<!-- Each H2/H3 question becomes a separate retrieval surface for AI engines. -->
+<h2>What is generative engine optimization?</h2>
+<p>One concise paragraph that answers the question directly…</p>
+
+<h2>How is GEO different from SEO?</h2>
+<p>Direct answer in 1–3 sentences, then expand…</p>
+
+<h2>Which AI engines should I optimize for first?</h2>
+<p>…</p>"""
+
+TRANSCRIPT_SNIPPET = """<!-- Option A: <track> on a self-hosted <video> -->
+<video controls>
+  <source src="/media/episode-12.mp4" type="video/mp4">
+  <track kind="captions" src="/media/episode-12.vtt" srclang="en" label="English">
+</video>
+
+<!-- Option B: a visible transcript section adjacent to the embed -->
+<details>
+  <summary>Read the full transcript</summary>
+  <article>
+    <p><strong>Host:</strong> Welcome back to the show…</p>
+    <p><strong>Guest:</strong> Thanks for having me…</p>
+  </article>
+</details>"""
 
 OG_META_SNIPPET = """<meta property="og:title" content="Your page title" />
 <meta property="og:description" content="One-sentence summary of this page." />
@@ -315,6 +434,109 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "score_lift_fail": 6,
         "title_fail": "Render meaningful text server-side (avoid JS-only content)",
         "docs_url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics",
+    },
+    # Citability — Princeton GEO 2024 + E-E-A-T ----------------------------
+    "outbound_citations": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "medium",
+        "score_lift_fail": 5,
+        "score_lift_warn": 2,
+        "title_fail": "Cite authoritative external sources inside your content",
+        "title_warn": "Add a few more outbound citations to credible sources",
+        "snippet": OUTBOUND_CITATIONS_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://arxiv.org/abs/2311.09735",
+    },
+    "statistics_density": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "medium",
+        "score_lift_fail": 4,
+        "score_lift_warn": 2,
+        "title_fail": "Add concrete numbers and statistics to your content",
+        "title_warn": "Add a few more concrete statistics or data points",
+        "docs_url": "https://arxiv.org/abs/2311.09735",
+    },
+    "quotation_density": {
+        "severity_on_fail": "minor",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 3,
+        "score_lift_warn": 1,
+        "title_fail": "Quote credible sources directly using <blockquote> / <q>",
+        "title_warn": "Add 1–2 more direct quotations from credible sources",
+        "snippet": QUOTATION_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://arxiv.org/abs/2311.09735",
+    },
+    "fanout_h2_questions": {
+        "severity_on_fail": "minor",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 2,
+        "score_lift_warn": 1,
+        "title_fail": "Phrase your H2/H3 subheads as questions readers actually ask",
+        "title_warn": "Convert more H2/H3 subheads into question form",
+        "snippet": FANOUT_H2_SNIPPET,
+        "snippet_language": "html",
+    },
+    "freshness_visible_updated": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 3,
+        "score_lift_warn": 1,
+        "title_fail": "Show a visible \"Updated [date]\" line on every article",
+        "title_warn": "Pair your <time> element with a human-readable \"Updated …\" line",
+        "snippet": JSONLD_ARTICLE_DATEMODIFIED_SNIPPET,
+        "snippet_language": "html",
+    },
+    "byline_links": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 4,
+        "score_lift_warn": 2,
+        "title_fail": "Link every byline to a real author page",
+        "title_warn": "Improve your author byline with rel=author + a credentialed page",
+        "snippet": BYLINE_LINK_SNIPPET,
+        "snippet_language": "html",
+    },
+    "transcripts_for_media": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "medium",
+        "score_lift_fail": 4,
+        "score_lift_warn": 2,
+        "title_fail": "Publish transcripts for your video / audio content",
+        "title_warn": "Make sure every video / podcast has a discoverable transcript",
+        "snippet": TRANSCRIPT_SNIPPET,
+        "snippet_language": "html",
+    },
+    "person_schema_sameas": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 3,
+        "score_lift_warn": 1,
+        "title_fail": "Add Person JSON-LD with sameAs profile links for every author",
+        "title_warn": "Add more sameAs links to your author Person schema",
+        "snippet": JSONLD_PERSON_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://schema.org/Person",
+    },
+    "freshness_datemodified": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 3,
+        "score_lift_warn": 1,
+        "title_fail": "Add datePublished + dateModified to your Article JSON-LD",
+        "title_warn": "Add dateModified alongside your existing datePublished",
+        "snippet": JSONLD_ARTICLE_DATEMODIFIED_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://schema.org/Article",
     },
     # Citation probes -------------------------------------------------------
     "probe_gemini": {

@@ -26,9 +26,11 @@ from .probes import (
 )
 from .scanners import (
     check_agent_access,
+    check_citability,
     check_content_clarity,
     check_discoverability,
     check_structured_data,
+    extract_jsonld,
 )
 from .scoring import build_category, build_fixes, grade_for, overall_score
 from .targets import WebsiteTarget
@@ -110,7 +112,12 @@ async def scan(req: ScanRequest) -> Report:
         agent_access_task = check_agent_access(target, fetcher)
         discoverability_task = check_discoverability(target, fetcher, home_html)
         structured_data_checks = check_structured_data(home_html)
-        content_checks = check_content_clarity(home_html)
+        # Reuse parsed JSON-LD between scanners — citability cares about Person /
+        # Article nodes too, and we don't want to reparse on every check.
+        jsonld_blocks = extract_jsonld(home_html)
+        content_checks = check_content_clarity(home_html) + check_citability(
+            home_html, jsonld_blocks
+        )
 
         # Live probes in parallel
         probe_tasks: list = []

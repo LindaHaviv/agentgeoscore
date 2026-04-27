@@ -5,6 +5,7 @@ import { BRAND } from '../brand';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { FixList } from '../components/FixList';
 import { LLMSTxtCard } from '../components/LLMSTxtCard';
+import { RecommendationsCard } from '../components/RecommendationsCard';
 import { ScanningIndicator } from '../components/ScanningIndicator';
 import { ScoreCard } from '../components/ScoreCard';
 import { URLInput } from '../components/URLInput';
@@ -93,6 +94,12 @@ export default function ReportPage() {
               <LLMSTxtCard content={report.suggested_llms_txt} domain={report.domain} />
             </div>
           )}
+
+          <div className="mt-16">
+            <div className="rule mb-8" />
+            <div className="kicker mb-6">chapter — off-page signals</div>
+            <RecommendationsCard />
+          </div>
 
           {report.errors.length > 0 && (
             <div className="mt-10 font-mono text-xs text-ink-400">
