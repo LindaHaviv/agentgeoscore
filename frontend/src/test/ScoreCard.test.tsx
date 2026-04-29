@@ -15,7 +15,6 @@ const baseReport: Report = {
     { id: 'agent_access', label: 'Agent Access', weight: 0.25, score: 90, checks: [], summary: '' },
   ],
   fixes: [],
-  suggested_llms_txt: '',
   errors: [],
 };
 

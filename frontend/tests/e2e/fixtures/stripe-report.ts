@@ -93,24 +93,6 @@ export const stripeReport: Report = {
       "score": 95,
       "checks": [
         {
-          "id": "llms_txt",
-          "label": "llms.txt present",
-          "status": "pass",
-          "score": 1.0,
-          "weight": 2.0,
-          "detail": "Found llms.txt (63917 bytes).",
-          "evidence": null
-        },
-        {
-          "id": "llms_full_txt",
-          "label": "llms-full.txt present",
-          "status": "warn",
-          "score": 0.3,
-          "weight": 0.5,
-          "detail": "Optional: add /llms-full.txt with full-content Markdown for richer AI grounding.",
-          "evidence": null
-        },
-        {
           "id": "sitemap",
           "label": "Sitemap available",
           "status": "pass",
@@ -364,15 +346,6 @@ export const stripeReport: Report = {
     },
     {
       "severity": "minor",
-      "category": "discoverability",
-      "title": "Add an llms-full.txt with your full site content in Markdown",
-      "detail": "Optional: add /llms-full.txt with full-content Markdown for richer AI grounding.",
-      "score_lift": 1,
-      "effort": "medium",
-      "docs_url": "https://llmstxt.org/"
-    },
-    {
-      "severity": "minor",
       "category": "content_clarity",
       "title": "Reduce to a single <h1> on your homepage",
       "detail": "2 H1 tags \u2014 ideally just one.",
@@ -388,7 +361,6 @@ export const stripeReport: Report = {
       "effort": "high"
     }
   ],
-  "suggested_llms_txt": "# Stripe\n> Financial infrastructure for the internet.\n\n## Key pages\n- [/docs](/docs): documentation\n- [/pricing](/pricing): pricing\n",
   "test_prompts": {
     "detected_category": {
       "slug": "fintech-payments",
