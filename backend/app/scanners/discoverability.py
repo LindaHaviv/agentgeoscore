@@ -1,4 +1,13 @@
-"""Discoverability scanner — llms.txt, sitemap, HTTPS, response speed."""
+"""Discoverability scanner — sitemap, HTTPS, canonical, response speed.
+
+Note: We intentionally do NOT score `/llms.txt` or `/llms-full.txt`. The
+llmstxt.org proposal is unadopted by every major AI engine (OpenAI,
+Anthropic, Google AI Overviews, Perplexity) at the time of writing — no
+vendor doc or peer-reviewed study confirms it influences citations.
+Scoring it would punish sites for not adopting an unproven spec, which
+contradicts our evidence-backed framing. It's mentioned as an off-page
+recommendation instead (see RecommendationsCard on the frontend).
+"""
 from __future__ import annotations
 
 from bs4 import BeautifulSoup
@@ -13,62 +22,7 @@ async def check_discoverability(
 ) -> list[CheckResult]:
     results: list[CheckResult] = []
 
-    # 1. llms.txt — the emerging standard (https://llmstxt.org) for AI-friendly content maps
-    llms_url = target.absolute("/llms.txt")
-    llms_fetch = await fetcher.get(llms_url)
-    if llms_fetch.ok and llms_fetch.status == 200 and llms_fetch.text.strip():
-        # Light validation: should start with a H1 per spec
-        first_line = next(
-            (ln for ln in llms_fetch.text.splitlines() if ln.strip()), ""
-        )
-        well_formed = first_line.startswith("# ")
-        results.append(
-            CheckResult(
-                id="llms_txt",
-                label="llms.txt present",
-                status=CheckStatus.PASS if well_formed else CheckStatus.WARN,
-                score=1.0 if well_formed else 0.7,
-                weight=2.0,
-                detail=(
-                    f"Found llms.txt ({len(llms_fetch.text)} bytes)."
-                    if well_formed
-                    else "Found llms.txt but it doesn't start with a `# Heading` line per the llmstxt.org spec."
-                ),
-            )
-        )
-        # Bonus: llms-full.txt (full-content variant)
-        llms_full = await fetcher.get(target.absolute("/llms-full.txt"))
-        results.append(
-            CheckResult(
-                id="llms_full_txt",
-                label="llms-full.txt present",
-                status=CheckStatus.PASS if llms_full.ok and llms_full.status == 200 else CheckStatus.WARN,
-                score=1.0 if llms_full.ok and llms_full.status == 200 else 0.3,
-                weight=0.5,
-                detail=(
-                    f"Found llms-full.txt ({len(llms_full.text)} bytes)."
-                    if llms_full.ok and llms_full.status == 200
-                    else "Optional: add /llms-full.txt with full-content Markdown for richer AI grounding."
-                ),
-            )
-        )
-    else:
-        results.append(
-            CheckResult(
-                id="llms_txt",
-                label="llms.txt present",
-                status=CheckStatus.FAIL,
-                score=0.0,
-                weight=2.0,
-                detail=(
-                    "No /llms.txt found. This is the emerging standard (llmstxt.org) that tells "
-                    "AI assistants which Markdown-formatted pages best represent your site. "
-                    "Adding one is the single highest-leverage thing you can do."
-                ),
-            )
-        )
-
-    # 2. sitemap.xml — check direct path + robots.txt Sitemap directive
+    # 1. sitemap.xml — check direct path + robots.txt Sitemap directive
     sitemap_url = target.absolute("/sitemap.xml")
     sitemap = await fetcher.get(sitemap_url)
     robots = await fetcher.get(target.absolute("/robots.txt"))
@@ -96,7 +50,7 @@ async def check_discoverability(
         )
     )
 
-    # 3. HTTPS
+    # 2. HTTPS
     is_https = target.origin.startswith("https://")
     results.append(
         CheckResult(
@@ -111,7 +65,7 @@ async def check_discoverability(
         )
     )
 
-    # 4. Canonical URL on homepage
+    # 3. Canonical URL on homepage
     canonical_present = False
     if home_html:
         soup = BeautifulSoup(home_html, "lxml")
@@ -132,7 +86,7 @@ async def check_discoverability(
         )
     )
 
-    # 5. Homepage response speed
+    # 4. Homepage response speed
     home_fetch = await fetcher.get(target.url)
     if home_fetch.ok:
         ms = home_fetch.elapsed_ms

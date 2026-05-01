@@ -88,7 +88,6 @@ export interface Report {
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
   categories: CategoryResult[];
   fixes: Fix[];
-  suggested_llms_txt: string;
   test_prompts?: TestPromptsBundle | null;
   errors: string[];
 }

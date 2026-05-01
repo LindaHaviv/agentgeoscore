@@ -4,7 +4,6 @@ import { buildShareUrl, scanUrl } from '../api';
 import { BRAND } from '../brand';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
 import { FixList } from '../components/FixList';
-import { LLMSTxtCard } from '../components/LLMSTxtCard';
 import { RecommendationsCard } from '../components/RecommendationsCard';
 import { ScanningIndicator } from '../components/ScanningIndicator';
 import { ScoreCard } from '../components/ScoreCard';
@@ -87,14 +86,6 @@ export default function ReportPage() {
             </div>
             <FixList items={report.fixes} />
           </div>
-
-          {report.suggested_llms_txt && (
-            <div className="mt-16">
-              <div className="rule mb-8" />
-              <div className="kicker mb-6">chapter — your drop-in llms.txt</div>
-              <LLMSTxtCard content={report.suggested_llms_txt} domain={report.domain} />
-            </div>
-          )}
 
           {report.test_prompts && (
             <div className="mt-16">

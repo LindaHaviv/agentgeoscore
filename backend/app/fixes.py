@@ -33,18 +33,6 @@ class FixTemplate(TypedDict, total=False):
 
 
 # Snippets — standalone constants so tests can assert they exist / are non-empty.
-LLMS_TXT_SNIPPET = """# <Your site name>
-> One-line summary of what your site is and who it's for.
-
-A paragraph of optional context that gives an LLM enough grounding to talk
-about your product accurately.
-
-## Key pages
-- [/about](/about): who we are
-- [/docs](/docs): developer documentation
-- [/pricing](/pricing): plans and pricing
-"""
-
 ROBOTS_ALLOW_SNIPPET = """# Explicitly allow AI crawlers
 User-agent: GPTBot
 Allow: /
@@ -220,25 +208,6 @@ META_DESC_SNIPPET = (
 
 FIX_LIBRARY: dict[str, FixTemplate] = {
     # Discoverability ---------------------------------------------------------
-    "llms_txt": {
-        "severity_on_fail": "critical",
-        "severity_on_warn": "important",
-        "effort": "low",
-        "score_lift_fail": 8,
-        "score_lift_warn": 3,
-        "title_fail": "Publish an llms.txt at your site root",
-        "title_warn": "Fix your llms.txt to match the llmstxt.org spec",
-        "snippet": LLMS_TXT_SNIPPET,
-        "snippet_language": "markdown",
-        "docs_url": "https://llmstxt.org/",
-    },
-    "llms_full_txt": {
-        "severity_on_warn": "minor",
-        "effort": "medium",
-        "score_lift_warn": 1,
-        "title_warn": "Add an llms-full.txt with your full site content in Markdown",
-        "docs_url": "https://llmstxt.org/",
-    },
     "sitemap": {
         "severity_on_fail": "important",
         "effort": "low",

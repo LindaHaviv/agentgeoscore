@@ -12,10 +12,10 @@ test.describe('header and footer chrome', () => {
     await expect(home).toHaveAttribute('href', '/');
   });
 
-  test('"What\'s llms.txt?" header link opens llmstxt.org in a new tab', async ({ page }) => {
+  test('"The GEO paper" header link opens the arXiv paper in a new tab', async ({ page }) => {
     await page.goto('/');
-    const link = page.getByRole('link', { name: /llms\.txt\?/i });
-    await expect(link).toHaveAttribute('href', 'https://llmstxt.org/');
+    const link = page.getByRole('link', { name: /geo paper/i });
+    await expect(link).toHaveAttribute('href', 'https://arxiv.org/abs/2311.09735');
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', /noreferrer/);
   });
