@@ -90,11 +90,7 @@ function FixItem({ fix, index }: { fix: Fix; index: number }) {
           <div className="mt-4">
             <div className="flex items-center justify-between mb-1.5">
               <span className="kicker !text-[0.6rem] text-ink-400">
-                {fix.snippet_language === 'markdown'
-                  ? 'drop-in llms.txt starter'
-                  : fix.snippet_language === 'html'
-                  ? 'drop-in html'
-                  : 'drop-in snippet'}
+                {fix.snippet_language === 'html' ? 'drop-in html' : 'drop-in snippet'}
               </span>
               <button
                 type="button"

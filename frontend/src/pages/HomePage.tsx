@@ -25,9 +25,8 @@ export default function HomePage() {
           <em className="font-display-italic text-ink-700">find</em>,{' '}
           <em className="font-display-italic text-ink-700">read</em>, and{' '}
           <em className="font-display-italic text-ink-700">cite</em> your site — then
-          hand you back a grade out of one hundred, a ranked fix list, and a
-          starter <code className="font-mono text-ink-700 text-base">llms.txt</code>{' '}
-          you can drop straight in.
+          hand you back a grade out of one hundred, a ranked fix list, and the
+          ground-truth prompts to test whether AI search actually recommends you.
         </p>
 
         <URLInput onSubmit={handleSubmit} />
@@ -45,7 +44,7 @@ export default function HomePage() {
           <Chapter
             num="II"
             title="Discoverability"
-            desc="llms.txt, sitemap.xml, HTTPS, canonical URLs — the plumbing that generative engines depend on to find the good parts."
+            desc="sitemap.xml, HTTPS, canonical URLs, response speed — the plumbing that generative engines depend on to find the good parts."
           />
           <Chapter
             num="III"

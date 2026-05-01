@@ -18,12 +18,12 @@ export default function App() {
           </Link>
           <nav className="flex items-center gap-6 text-sm text-ink-500">
             <a
-              href="https://llmstxt.org/"
+              href="https://arxiv.org/abs/2311.09735"
               target="_blank"
               rel="noreferrer"
               className="under-dot"
             >
-              What's llms.txt?
+              The GEO paper
             </a>
             <a
               href={BRAND.repoUrl}

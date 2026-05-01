@@ -421,14 +421,14 @@ def detect_category(
     )
 
 
-# ---- Brand-name extraction (small reuse of llms_suggest's logic) -----------
+# ---- Brand-name extraction --------------------------------------------------
 
 
 _GENERIC_TITLE_WORDS = {"home", "homepage", "welcome", "page", "untitled"}
 
 
 def extract_brand(home_html: str, host: str) -> str:
-    """Best-effort brand name. Mirrors llms_suggest._extract_name signal order."""
+    """Best-effort brand name. Prefers og:site_name > schema.org Organization name > cleaned <title>."""
     soup = BeautifulSoup(home_html or "", "html.parser")
     og = soup.find("meta", attrs={"property": "og:site_name"})
     if isinstance(og, Tag) and og.get("content"):

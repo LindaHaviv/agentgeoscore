@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 const STEPS = [
   'Fetching your homepage',
   'Reading robots.txt',
-  'Looking for llms.txt',
+  'Checking sitemap and HTTPS',
   'Extracting schema.org markup',
   'Analyzing semantic HTML',
   'Asking Gemini if it cites you',
@@ -11,7 +11,7 @@ const STEPS = [
   'Checking Brave Search rankings',
   'Asking Duck.ai (GPT-4o-mini + Claude)',
   'Asking Groq compound (web search)',
-  'Composing a starter llms.txt',
+  'Generating AI-search test prompts',
   'Composing the verdict',
 ];
 

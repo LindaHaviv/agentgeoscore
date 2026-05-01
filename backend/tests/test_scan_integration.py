@@ -43,28 +43,15 @@ Allow: /
 Sitemap: https://example.com/sitemap.xml
 """
 
-LLMS_TXT = """# Example
-
-> Example is a demo site for AgentGEOScore.
-
-## Docs
-- [Getting started](/docs)
-"""
-
 SITEMAP = """<?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://example.com/</loc></url>
 </urlset>"""
 
 
-def _setup_mocks(include_llms: bool = True, include_sitemap: bool = True):
+def _setup_mocks(include_sitemap: bool = True):
     respx.get("https://example.com/").mock(return_value=Response(200, text=HOMEPAGE))
     respx.get("https://example.com/robots.txt").mock(return_value=Response(200, text=ROBOTS_OK))
-    if include_llms:
-        respx.get("https://example.com/llms.txt").mock(return_value=Response(200, text=LLMS_TXT))
-    else:
-        respx.get("https://example.com/llms.txt").mock(return_value=Response(404))
-    respx.get("https://example.com/llms-full.txt").mock(return_value=Response(404))
     if include_sitemap:
         respx.get("https://example.com/sitemap.xml").mock(return_value=Response(200, text=SITEMAP))
     else:
@@ -89,8 +76,10 @@ def test_scan_happy_path(monkeypatch):
     assert report["score"] >= 60
     assert report["grade"] in ("A", "B", "C")
     assert len(report["categories"]) >= 4
-    # The generated llms.txt is always returned
-    assert report["suggested_llms_txt"].startswith("# ")
+    # llms.txt is no longer scored or surfaced as a fix — verify absence.
+    assert "suggested_llms_txt" not in report
+    fix_ids = {f.get("title", "") for f in report["fixes"]}
+    assert not any("llms.txt" in t.lower() for t in fix_ids)
     # Fix list (new rich model)
     assert isinstance(report["fixes"], list)
     for fix in report["fixes"]:
@@ -110,8 +99,6 @@ def test_scan_bad_site_low_score(monkeypatch):
     respx.get("https://bad.com/robots.txt").mock(
         return_value=Response(200, text="User-agent: *\nDisallow: /\n")
     )
-    respx.get("https://bad.com/llms.txt").mock(return_value=Response(404))
-    respx.get("https://bad.com/llms-full.txt").mock(return_value=Response(404))
     respx.get("https://bad.com/sitemap.xml").mock(return_value=Response(404))
 
     client = TestClient(app)

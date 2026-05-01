@@ -13,7 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 
 from .fetcher import Fetcher
-from .llms_suggest import generate_llms_txt
 from .models import CategoryId, Report, ScanRequest
 from .og import render_brand_card, render_share_card
 from .probes import (
@@ -159,7 +158,6 @@ async def scan(req: ScanRequest) -> Report:
     score = overall_score(categories)
     grade = grade_for(score)
     fixes = build_fixes(categories, target.host)
-    suggested_llms_txt = generate_llms_txt(home_html, target.origin, target.host)
     # Build AI-search test prompts from the same parse outputs — no extra fetch.
     test_prompts = build_test_prompts_bundle(home_html, jsonld_blocks, target.host)
 
@@ -173,7 +171,6 @@ async def scan(req: ScanRequest) -> Report:
         grade=grade,
         categories=categories,
         fixes=fixes,
-        suggested_llms_txt=suggested_llms_txt,
         test_prompts=test_prompts,
         errors=errors,
     )

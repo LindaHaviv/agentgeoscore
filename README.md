@@ -7,7 +7,7 @@ Paste a URL, get:
 - a **0–100 score** + letter grade **A–F**
 - a **category breakdown** (agent access, discoverability, structured data, content clarity, citation probe)
 - a **ranked fix list** — what to do first, with copy-pasteable snippets + expected score lift
-- a **drop-in `llms.txt`** auto-generated from your homepage
+- **AI-search test prompts** auto-generated for your category, with deep-links to ChatGPT / Perplexity / Claude / Google AI
 
 GEO is what SEO becomes when the readers are LLMs. This is a field study + a toolkit.
 
@@ -28,14 +28,14 @@ agentgeoscore/
 │   │   ├── models.py            # Pydantic
 │   │   ├── scoring.py           # category + overall scoring, fix ranking
 │   │   ├── fixes.py             # check_id → Fix (severity/effort/score_lift/snippet)
-│   │   ├── llms_suggest.py      # generates starter llms.txt from homepage
+│   │   ├── test_prompts.py      # category detection + AI-search prompt generation
 │   │   ├── scanners/            # agent_access, discoverability, structured_data, content_clarity
 │   │   └── probes/              # gemini, mistral, brave, duck_ai, groq
 │   └── tests/
 └── frontend/
     ├── src/
     │   ├── pages/               # HomePage, ReportPage, NotFoundPage
-    │   ├── components/          # URLInput, ScoreCard, CategoryBreakdown, FixList, LLMSTxtCard
+    │   ├── components/          # URLInput, ScoreCard, CategoryBreakdown, FixList, TestPromptsCard, RecommendationsCard
     │   ├── api.ts
     │   ├── types.ts
     │   └── brand.ts
@@ -92,7 +92,7 @@ The dev server proxies `/api` to `http://localhost:8000` — run the backend in 
 | Category          | Weight | What's checked |
 |-------------------|:------:|----------------|
 | Agent Access      | 25%    | robots.txt exists + AI-bot rules, CDN AI gating, HTTPS, HTTP status, redirects |
-| Discoverability   | 20%    | `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, canonical URL, OG/Twitter cards |
+| Discoverability   | 20%    | `/sitemap.xml`, HTTPS, canonical URL, homepage response speed |
 | Structured Data   | 20%    | JSON-LD presence, schema.org `@type` coverage, microdata |
 | Content Clarity   | 15%    | `<title>` + meta description length, exactly one `<h1>`, semantic landmarks, text-to-HTML ratio |
 | Citation Probe    | 20%    | % of LLMs (Gemini, Mistral, Brave, Duck.ai, Groq) that cite the domain |

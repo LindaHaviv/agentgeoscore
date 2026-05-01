@@ -121,6 +121,5 @@ class Report(BaseModel):
     grade: Literal["A", "B", "C", "D", "F"]
     categories: list[CategoryResult]
     fixes: list[Fix]
-    suggested_llms_txt: str = ""
     test_prompts: TestPromptsBundle | None = None
     errors: list[str] = Field(default_factory=list)

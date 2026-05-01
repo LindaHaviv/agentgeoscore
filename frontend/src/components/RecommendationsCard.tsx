@@ -45,6 +45,11 @@ const RECOMMENDATIONS: Recommendation[] = [
     body: 'Get listed in industry roundups, comparison pages, "best of" lists, and analyst reports. AI engines verify your claims against external sources before citing — being mentioned by sites the AI already trusts (G2, TechCrunch, your industry\'s top blogs) makes you eligible for citation.',
     evidence: 'E-E-A-T Trustworthiness signal; consistently flagged across Perplexity / OpenAI / Anthropic source-selection docs.',
   },
+  {
+    title: 'Optional: experiment with /llms.txt — but write it yourself',
+    body: 'Some tools publish an /llms.txt Markdown summary describing their site for LLMs (proposal at llmstxt.org). No major AI engine has publicly confirmed it reads this file yet, so we don\'t score it. If you want to try it, write one yourself in your own voice — don\'t paste a template. The point is to articulate what your site is about; a generic auto-generated file adds noise, not signal.',
+    evidence: 'llmstxt.org spec; unadopted by OpenAI / Anthropic / Google AI / Perplexity as of 2026.',
+  },
 ];
 
 export function RecommendationsCard() {
