@@ -1,4 +1,5 @@
 """Tests for backend/app/test_prompts.py — category detection + prompt generation."""
+
 from __future__ import annotations
 
 from urllib.parse import unquote_plus
@@ -10,6 +11,7 @@ from app.test_prompts import (
     build_test_prompts_bundle,
     detect_category,
     extract_brand,
+    extract_page_topics,
     generate_prompts,
     list_categories,
 )
@@ -213,8 +215,13 @@ def test_deep_links_target_documented_endpoints():
 
 
 def test_bundle_contains_detected_category_and_all_categories():
-    html = """<html><head><title>Acme</title></head>
-<body><a href="/menu">menu</a></body></html>"""
+    # Multiple corroborating signals so the bundle hits the
+    # min-detection threshold (3.5) — a single ``/menu`` link is no longer
+    # enough to classify a site, by design (see the threshold fix that
+    # stopped Mayo Clinic being mis-detected as 'online store' from a stray
+    # ``/store`` link).
+    html = """<html><head><title>Joe's</title></head>
+<body><a href="/menu">menu</a><a href="/reservations">book</a></body></html>"""
     bundle = build_test_prompts_bundle(html, [], "acme.com")
     assert bundle.detected_category.slug == "restaurants-local"
     # all_categories powers the override dropdown.
@@ -235,7 +242,7 @@ def test_bundle_honors_category_override():
 def test_bundle_ignores_unknown_override_slug():
     """An attacker-supplied or stale override slug should fall through to
     auto-detection rather than crash or render garbage."""
-    html = """<html><body><a href="/menu">menu</a></body></html>"""
+    html = """<html><body><a href="/menu">menu</a><a href="/reservations">book</a></body></html>"""
     bundle = build_test_prompts_bundle(html, [], "acme.com", category_override="🦄-not-real")
     # Falls through to detection
     assert bundle.detected_category.slug == "restaurants-local"
@@ -257,3 +264,180 @@ def test_every_category_renders_four_non_empty_prompts(cat):
     for p in prompts:
         assert p.text and p.text.strip()
         assert p.rationale and p.rationale.strip()
+
+
+# ---- New verticals: travel, sportswear, streaming, automotive --------------
+
+
+def test_detect_travel_hospitality_via_title_and_paths():
+    """Airbnb-shaped homepage: vacation rentals + /experiences nav."""
+    html = """<html><head>
+<title>Airbnb: Vacation Rentals, Cabins, Beach Houses, Unique Homes &amp; Experiences</title>
+<meta name="description" content="Get an Airbnb for every kind of trip — 8 million vacation rentals worldwide" />
+<meta property="og:site_name" content="Airbnb" />
+</head><body>
+<a href="/homes">Homes</a><a href="/experiences">Experiences</a><a href="/host">Host</a>
+<h2>Homes on Airbnb</h2>
+</body></html>"""
+    cat = detect_category(html, [], "airbnb.com")
+    assert cat.slug == "travel-hospitality"
+
+
+def test_detect_apparel_sportswear_via_strong_keywords_and_paths():
+    """Nike-shaped homepage: 'world's athletes' + /running /basketball nav."""
+    html = """<html><head>
+<title>Nike. Just Do It. Nike.com</title>
+<meta name="description" content="Inspiring the world's athletes, Nike delivers innovative products and gear." />
+</head><body>
+<a href="/running">Running</a><a href="/basketball">Basketball</a><a href="/training">Training</a>
+</body></html>"""
+    cat = detect_category(html, [], "nike.com")
+    assert cat.slug == "apparel-sportswear"
+
+
+def test_detect_entertainment_streaming_via_title_and_strong_keywords():
+    """Netflix-shaped homepage: 'watch tv shows online' + /watch nav."""
+    html = """<html><head>
+<title>Netflix - Watch TV Shows Online, Watch Movies Online</title>
+<meta name="description" content="Watch Netflix movies &amp; TV shows online or stream right to your smart TV." />
+</head><body>
+<a href="/watch">Watch</a><a href="/browse/genre/839338">Comedy</a>
+<h2>Trending Now</h2>
+</body></html>"""
+    cat = detect_category(html, [], "netflix.com")
+    assert cat.slug == "entertainment-streaming"
+
+
+# ---- Threshold: weak single-signal sites should fall back to generic -------
+
+
+def test_single_weak_nav_link_does_not_misclassify_site():
+    """Regression: a healthcare site with a stray ``/store`` nav link must
+    *not* be classified as ``ecommerce-store`` from that single signal alone.
+
+    This was the Mayo Clinic bug — one nav link to /store was outranking
+    a richer healthcare context. The min-detection threshold (3.5) requires
+    multiple corroborating signals before any classification fires.
+    """
+    html = """<html><head><title>Some Site</title></head>
+<body><a href="/store">Store</a></body></html>"""
+    cat = detect_category(html, [], "example.com")
+    # Single nav-link match (2.0) does not pass the 3.5 threshold.
+    assert cat.slug == "generic"
+
+
+# ---- Brand TLD-suffix stripping --------------------------------------------
+
+
+def test_extract_brand_strips_dot_com_suffix_from_og_site_name():
+    """Regression: ``Nike.com`` → ``Nike``. Some sites set og:site_name to
+    their domain literal; we shouldn't render ``Nike.com vs alternatives``.
+    """
+    html = '<html><head><meta property="og:site_name" content="Nike.com" /></head></html>'
+    assert extract_brand(html, "nike.com") == "Nike"
+
+
+def test_extract_brand_strips_dot_co_suffix():
+    html = '<html><head><meta property="og:site_name" content="Linear.app" /></head></html>'
+    assert extract_brand(html, "linear.app") == "Linear"
+
+
+def test_extract_brand_does_not_strip_when_internal_dot():
+    """``IO Interactive`` is a brand name, not a TLD-suffixed brand."""
+    html = '<html><head><meta property="og:site_name" content="IO Interactive" /></head></html>'
+    assert extract_brand(html, "ioi.dk") == "IO Interactive"
+
+
+# ---- Page topic extraction --------------------------------------------------
+
+
+def test_extract_page_topics_picks_up_repeated_h2():
+    html = """<html><body>
+<h2>Vacation Rentals</h2>
+<h2>Vacation Rentals</h2>
+<h3>Beach Houses</h3>
+<a href="/x">Privacy</a>
+</body></html>"""
+    topics = extract_page_topics(html)
+    # Most-repeated phrase wins, boilerplate (Privacy) is filtered.
+    assert "vacation rentals" in topics
+    assert "privacy" not in topics
+
+
+def test_extract_page_topics_collapses_repeated_tokens_and_badges():
+    """Airbnb's nav renders "Experiences" + a NEW badge as the literal text
+    ``"Experiences Experiences, NEW"``. The normalizer collapses duplicate
+    tokens and strips the badge so the topic is just ``"experiences"``."""
+    html = """<html><body>
+<a href="/experiences">Experiences Experiences, NEW</a>
+<a href="/experiences">Experiences Experiences, NEW</a>
+<a href="/host">Become a host</a>
+</body></html>"""
+    topics = extract_page_topics(html)
+    assert "experiences" in topics
+    # The duplicated/badge-suffixed form must NOT slip through.
+    assert "experiences experiences, new" not in topics
+
+
+def test_extract_page_topics_filters_brand_substring():
+    """``Homes on Airbnb`` repeats 3x on Airbnb's homepage but contains the
+    brand and would render awkwardly as ``…focused on homes on airbnb``."""
+    html = """<html><body>
+<h2>Homes on Airbnb</h2><h2>Homes on Airbnb</h2><h2>Homes on Airbnb</h2>
+<h3>Vacation Rentals</h3>
+</body></html>"""
+    topics = extract_page_topics(html, exclude_brand="Airbnb")
+    assert "homes on airbnb" not in topics
+    assert "vacation rentals" in topics
+
+
+def test_extract_page_topics_filters_cta_phrases():
+    """``Get the report``, ``Talk to sales`` and similar CTAs would corrupt the
+    long-tail prompt — they're filtered by first-word and stoplist matches."""
+    html = """<html><body>
+<a href="/sales">Talk to sales</a>
+<a href="/sales">Contact Sales</a>
+<a href="/report">Get the report</a>
+<a href="/demo">Book a demo</a>
+<h2>Subscription Billing</h2>
+</body></html>"""
+    topics = extract_page_topics(html)
+    for cta in ("talk to sales", "contact sales", "get the report", "book a demo"):
+        assert cta not in topics
+    assert "subscription billing" in topics
+
+
+def test_extract_page_topics_filters_generic_chrome():
+    """Stoplisted boilerplate (login, sign up, privacy) must not appear."""
+    html = """<html><body>
+<a href="/login">Log in</a>
+<a href="/signup">Sign up</a>
+<a href="/about">About us</a>
+<a href="/help">Help</a>
+<h2>Beach Houses</h2>
+</body></html>"""
+    topics = extract_page_topics(html)
+    for stop in ("log in", "sign up", "about us", "help"):
+        assert stop not in topics
+
+
+def test_long_tail_prompt_interpolates_extracted_topic():
+    """Topic appears in long_tail prompt as ``focused on <topic>``."""
+    prompts = generate_prompts("travel-hospitality", "Airbnb", topics=["vacation rentals"])
+    long_tail = next(p for p in prompts if p.angle == "long_tail")
+    assert "focused on vacation rentals" in long_tail.text
+
+
+def test_long_tail_prompt_omits_topic_clause_when_no_topics():
+    """Without topics, long_tail falls back to the bare persona phrasing."""
+    prompts = generate_prompts("travel-hospitality", "Airbnb")
+    long_tail = next(p for p in prompts if p.angle == "long_tail")
+    assert "focused on" not in long_tail.text
+
+
+def test_generic_category_does_not_take_topic_interpolation():
+    """If the category is unknown, don't fake site-specificity by
+    appending a topic — render the bare generic persona instead."""
+    prompts = generate_prompts("generic", "Acme", topics=["vacation rentals"])
+    long_tail = next(p for p in prompts if p.angle == "long_tail")
+    assert "focused on" not in long_tail.text
