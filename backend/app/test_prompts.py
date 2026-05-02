@@ -26,6 +26,7 @@ The category lexicon below is hand-curated rather than learned. With ~14
 verticals, a small lexicon is more legible (and easier to debug a
 mis-classification on a real site) than a TF-IDF or embedding pipeline.
 """
+
 from __future__ import annotations
 
 import json
@@ -50,15 +51,15 @@ class CategoryDef:
     """Self-contained definition of a vertical for prompt generation."""
 
     slug: str
-    label: str            # display name shown in UI
-    descriptor: str       # noun phrase for prompts: "payment processor"
-    persona: str          # default persona: "developers integrating payments"
-    use_case: str         # what users come to this category to do
+    label: str  # display name shown in UI
+    descriptor: str  # noun phrase for prompts: "payment processor"
+    persona: str  # default persona: "developers integrating payments"
+    use_case: str  # what users come to this category to do
     long_tail_persona: str  # specific persona for long-tail prompt
     schema_types: tuple[str, ...] = ()
-    keywords: tuple[str, ...] = ()        # general title/meta/H1 terms (weight 1.0)
+    keywords: tuple[str, ...] = ()  # general title/meta/H1 terms (weight 1.0)
     strong_keywords: tuple[str, ...] = ()  # high-confidence terms (weight 3.0)
-    path_hints: tuple[str, ...] = ()      # nav-link paths that suggest this vertical
+    path_hints: tuple[str, ...] = ()  # nav-link paths that suggest this vertical
 
 
 # Order matters for prompt phrasing only; detection picks the highest-scoring
@@ -72,8 +73,29 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="add an AI feature to my product",
         long_tail_persona="a startup founder evaluating AI agents in 2026",
         schema_types=("SoftwareApplication",),
-        keywords=("llm", "machine learning", "artificial intelligence", "neural", "gpt", "claude", "ai assistant", "transformer", "fine-tune", "embeddings"),
-        strong_keywords=("ai agent", "ai agents", "agentic", "ai coding", "coding agent", "ai coding agent", "ai engineer", "autonomous agent", "ai software engineer"),
+        keywords=(
+            "llm",
+            "machine learning",
+            "artificial intelligence",
+            "neural",
+            "gpt",
+            "claude",
+            "ai assistant",
+            "transformer",
+            "fine-tune",
+            "embeddings",
+        ),
+        strong_keywords=(
+            "ai agent",
+            "ai agents",
+            "agentic",
+            "ai coding",
+            "coding agent",
+            "ai coding agent",
+            "ai engineer",
+            "autonomous agent",
+            "ai software engineer",
+        ),
         path_hints=("/agents", "/models", "/playground"),
     ),
     CategoryDef(
@@ -84,7 +106,22 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="ship and run software faster",
         long_tail_persona="a backend engineer at a fast-growing startup",
         schema_types=("SoftwareApplication", "SoftwareSourceCode"),
-        keywords=("api", "sdk", "developer", "developers", "open source", "github", "cli", "library", "framework", "infrastructure", "devops", "deploy", "ci/cd", "self-hosted"),
+        keywords=(
+            "api",
+            "sdk",
+            "developer",
+            "developers",
+            "open source",
+            "github",
+            "cli",
+            "library",
+            "framework",
+            "infrastructure",
+            "devops",
+            "deploy",
+            "ci/cd",
+            "self-hosted",
+        ),
         path_hints=("/docs", "/api", "/developers", "/sdk", "/cli", "/changelog"),
     ),
     CategoryDef(
@@ -95,7 +132,19 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="accept credit cards online",
         long_tail_persona="a SaaS founder handling subscription billing",
         schema_types=("FinancialService", "FinancialProduct"),
-        keywords=("payment", "payments", "checkout", "billing", "invoice", "subscriptions", "fintech", "credit card", "payout", "merchant", "acquirer"),
+        keywords=(
+            "payment",
+            "payments",
+            "checkout",
+            "billing",
+            "invoice",
+            "subscriptions",
+            "fintech",
+            "credit card",
+            "payout",
+            "merchant",
+            "acquirer",
+        ),
         strong_keywords=(
             "payment processing",
             "payment infrastructure",
@@ -115,8 +164,61 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="launch an online store",
         long_tail_persona="a creator launching a DTC brand",
         schema_types=("Store", "OnlineStore", "Service"),
-        keywords=("ecommerce", "online store", "sell online", "merchant", "marketplace", "storefront", "shopify", "woocommerce"),
+        keywords=(
+            "ecommerce",
+            "online store",
+            "sell online",
+            "merchant",
+            "marketplace",
+            "storefront",
+            "shopify",
+            "woocommerce",
+        ),
         path_hints=("/sell", "/start", "/themes", "/storefront"),
+    ),
+    CategoryDef(
+        slug="apparel-sportswear",
+        label="sports apparel / footwear",
+        descriptor="athletic brand",
+        persona="people shopping for sports gear",
+        use_case="find athletic shoes or apparel that fit my training",
+        long_tail_persona="a runner training for a marathon",
+        # Brand schema is common, but we anchor on category-specific terminology
+        # so we don't fight against any random store with a Brand JSON-LD block.
+        keywords=(
+            "running",
+            "training",
+            "athletes",
+            "athletic",
+            "sneakers",
+            "footwear",
+            "performance gear",
+            "basketball",
+            "soccer",
+            "tennis",
+            "marathon",
+        ),
+        strong_keywords=(
+            "athletic apparel",
+            "running shoes",
+            "training shoes",
+            "basketball shoes",
+            "performance gear",
+            "just do it",
+            "world's athletes",
+        ),
+        path_hints=(
+            "/running",
+            "/basketball",
+            "/training",
+            "/baseball",
+            "/soccer",
+            "/tennis",
+            "/footwear",
+            "/men",
+            "/women",
+            "/kids/shoes",
+        ),
     ),
     CategoryDef(
         slug="ecommerce-store",
@@ -126,9 +228,30 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="buy something online",
         long_tail_persona="a customer comparing options for a specific product",
         schema_types=("Store", "Product", "ProductGroup", "OfferCatalog"),
-        keywords=("buy", "cart", "shipping", "free shipping", "men's", "women's", "kids", "sale", "new arrivals"),
+        keywords=(
+            "buy",
+            "cart",
+            "shipping",
+            "free shipping",
+            "men's",
+            "women's",
+            "kids",
+            "sale",
+            "new arrivals",
+        ),
         strong_keywords=("add to cart", "free returns", "product details"),
-        path_hints=("/shop", "/products", "/cart", "/collections", "/store", "/p/", "/pd/", "/cat/", "/category/", "/department/", "/rooms/"),
+        path_hints=(
+            "/shop",
+            "/products",
+            "/cart",
+            "/collections",
+            "/p/",
+            "/pd/",
+            "/cat/",
+            "/category/",
+            "/department/",
+            "/rooms/",
+        ),
     ),
     CategoryDef(
         slug="design-creative",
@@ -141,7 +264,13 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         # Avoid generic "design" / "designer" — too noisy on furniture and decor
         # sites. Anchor on terms that are specific to the design-software space.
         keywords=("figma", "sketch app", "illustrator", "photoshop", "canvas", "vector", "ux/ui"),
-        strong_keywords=("design tool", "prototyping tool", "wireframing tool", "design system", "ui design tool"),
+        strong_keywords=(
+            "design tool",
+            "prototyping tool",
+            "wireframing tool",
+            "design system",
+            "ui design tool",
+        ),
         path_hints=("/templates", "/community", "/plugins"),
     ),
     CategoryDef(
@@ -153,7 +282,15 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         long_tail_persona="an operations lead at a 50-person company",
         # Don't list generic "Organization" — too many sites declare it.
         schema_types=("SoftwareApplication", "Service"),
-        keywords=("crm", "marketing automation", "workflow", "team", "enterprise", "dashboard", "reporting"),
+        keywords=(
+            "crm",
+            "marketing automation",
+            "workflow",
+            "team",
+            "enterprise",
+            "dashboard",
+            "reporting",
+        ),
         strong_keywords=("saas platform", "team collaboration", "all-in-one platform"),
         path_hints=("/pricing", "/customers", "/case-studies", "/enterprise", "/security"),
     ),
@@ -165,7 +302,17 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="organize my work and life",
         long_tail_persona="a knowledge worker juggling many projects",
         schema_types=("SoftwareApplication", "MobileApplication"),
-        keywords=("app", "notes", "calendar", "todo", "tasks", "personal", "productivity", "habit", "journal"),
+        keywords=(
+            "app",
+            "notes",
+            "calendar",
+            "todo",
+            "tasks",
+            "personal",
+            "productivity",
+            "habit",
+            "journal",
+        ),
         path_hints=("/download", "/ios", "/android"),
     ),
     CategoryDef(
@@ -176,7 +323,17 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="follow breaking news in my industry",
         long_tail_persona="a reader looking for original reporting on a specific topic",
         schema_types=("NewsArticle", "NewsMediaOrganization", "Newspaper", "Magazine"),
-        keywords=("news", "latest", "reporter", "editor", "magazine", "newspaper", "press", "headlines", "exclusive"),
+        keywords=(
+            "news",
+            "latest",
+            "reporter",
+            "editor",
+            "magazine",
+            "newspaper",
+            "press",
+            "headlines",
+            "exclusive",
+        ),
         path_hints=("/news", "/latest", "/section", "/world", "/politics"),
     ),
     CategoryDef(
@@ -187,7 +344,18 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="find trustworthy medical information",
         long_tail_persona="someone researching treatment options for a specific condition",
         schema_types=("MedicalOrganization", "Hospital", "Physician", "MedicalClinic"),
-        keywords=("health", "medical", "clinic", "hospital", "patient", "doctor", "treatment", "symptoms", "diagnosis", "wellness"),
+        keywords=(
+            "health",
+            "medical",
+            "clinic",
+            "hospital",
+            "patient",
+            "doctor",
+            "treatment",
+            "symptoms",
+            "diagnosis",
+            "wellness",
+        ),
         path_hints=("/patients", "/find-a-doctor", "/conditions", "/treatments"),
     ),
     CategoryDef(
@@ -198,7 +366,18 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="learn a new skill",
         long_tail_persona="a working professional looking to upskill on weekends",
         schema_types=("EducationalOrganization", "School", "University", "Course"),
-        keywords=("course", "courses", "learn", "tutorial", "bootcamp", "university", "school", "students", "curriculum", "degree"),
+        keywords=(
+            "course",
+            "courses",
+            "learn",
+            "tutorial",
+            "bootcamp",
+            "university",
+            "school",
+            "students",
+            "curriculum",
+            "degree",
+        ),
         path_hints=("/courses", "/students", "/admissions", "/programs", "/learn"),
     ),
     CategoryDef(
@@ -209,7 +388,16 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         use_case="find a great spot near me",
         long_tail_persona="a visitor planning a meal in a new neighborhood",
         schema_types=("Restaurant", "LocalBusiness", "FoodEstablishment", "Bar", "Cafe"),
-        keywords=("menu", "reservations", "open today", "delivery", "takeout", "hours", "location", "near me"),
+        keywords=(
+            "menu",
+            "reservations",
+            "open today",
+            "delivery",
+            "takeout",
+            "hours",
+            "location",
+            "near me",
+        ),
         path_hints=("/menu", "/reservations", "/locations", "/hours"),
     ),
     CategoryDef(
@@ -223,8 +411,153 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         # Avoid generic "/services" path — Airbnb and many marketplaces use it
         # for a different meaning. Keep agency hints to high-specificity terms.
         keywords=("consulting", "consultancy", "our clients"),
-        strong_keywords=("our work", "case studies", "our agency", "branding agency", "design agency", "marketing agency"),
+        strong_keywords=(
+            "our work",
+            "case studies",
+            "our agency",
+            "branding agency",
+            "design agency",
+            "marketing agency",
+        ),
         path_hints=("/work", "/case-studies", "/clients", "/our-work"),
+    ),
+    CategoryDef(
+        slug="travel-hospitality",
+        label="travel / hospitality",
+        descriptor="travel option",
+        persona="travelers planning a trip",
+        use_case="find a place to stay for an upcoming trip",
+        long_tail_persona="a family planning a vacation in a new city",
+        schema_types=("LodgingBusiness", "Hotel", "TravelAgency", "Resort"),
+        keywords=(
+            "vacation",
+            "rentals",
+            "hotel",
+            "hotels",
+            "stays",
+            "trip",
+            "travel",
+            "booking",
+            "reservation",
+            "destinations",
+            "flight",
+            "flights",
+            "cabins",
+        ),
+        strong_keywords=(
+            "vacation rentals",
+            "beach houses",
+            "book a stay",
+            "places to stay",
+            "unique homes",
+            "vacation rental",
+            "guest favorites",
+        ),
+        path_hints=(
+            "/homes",
+            "/stays",
+            "/hotels",
+            "/rooms",
+            "/destinations",
+            "/experiences",
+            "/flights",
+            "/trips",
+            "/host",
+            "/rentals",
+            "/cabins",
+        ),
+    ),
+    CategoryDef(
+        slug="entertainment-streaming",
+        label="streaming / entertainment",
+        descriptor="streaming service",
+        persona="people choosing what to watch",
+        use_case="find a streaming service for movies and shows",
+        long_tail_persona="a household trying to consolidate streaming subscriptions",
+        schema_types=("VideoOnDemandService", "BroadcastService"),
+        keywords=(
+            "watch",
+            "stream",
+            "streaming",
+            "movies",
+            "shows",
+            "series",
+            "originals",
+            "episodes",
+            "tv shows",
+            "documentary",
+            "documentaries",
+        ),
+        strong_keywords=(
+            "watch tv shows online",
+            "watch movies online",
+            "stream movies",
+            "streaming service",
+            "originals and exclusives",
+            "watch tv shows",
+        ),
+        path_hints=("/watch", "/browse/genre", "/shows", "/movies", "/originals"),
+    ),
+    CategoryDef(
+        slug="automotive",
+        label="automotive / vehicles",
+        descriptor="vehicle",
+        persona="people shopping for a new vehicle",
+        use_case="research a car before buying",
+        long_tail_persona="a buyer comparing electric vehicles in 2026",
+        schema_types=("Vehicle", "Car", "AutoDealer", "AutoManufacturer"),
+        keywords=("vehicle", "vehicles", "suv", "sedan", "truck", "dealer", "horsepower", "mpg"),
+        strong_keywords=(
+            "electric vehicle",
+            "build your own",
+            "test drive",
+            "explore models",
+            "all-electric",
+            "all electric",
+        ),
+        path_hints=("/models", "/inventory", "/build", "/test-drive", "/dealers", "/electric"),
+    ),
+    CategoryDef(
+        slug="real-estate",
+        label="real estate",
+        descriptor="real estate site",
+        persona="home buyers and renters",
+        use_case="search for homes for sale or rent",
+        long_tail_persona="a first-time buyer in a competitive market",
+        schema_types=("RealEstateAgent", "RealEstateListing"),
+        keywords=(
+            "homes for sale",
+            "for sale",
+            "for rent",
+            "listings",
+            "mortgage",
+            "neighborhoods",
+            "buyers",
+            "sellers",
+            "apartments",
+        ),
+        strong_keywords=("homes for sale", "real estate", "find a home", "list your home"),
+        path_hints=("/homes", "/listings", "/buy", "/rent", "/sell", "/agents", "/mortgage"),
+    ),
+    CategoryDef(
+        slug="cpg-food-beverage",
+        label="consumer brand (food / beverage / household)",
+        descriptor="brand",
+        persona="people interested in the brand or its products",
+        use_case="learn about a consumer brand or its product lineup",
+        long_tail_persona="a shopper researching the brand behind a product they use",
+        schema_types=("Brand",),
+        keywords=(
+            "our brands",
+            "flavors",
+            "ingredients",
+            "responsibility",
+            "sustainability",
+            "history",
+            "heritage",
+        ),
+        strong_keywords=("our company", "our brands", "global brands", "global iconic brands"),
+        path_hints=("/brands", "/our-brands", "/sustainability", "/about-us", "/our-company"),
     ),
     CategoryDef(
         slug="nonprofit",
@@ -235,7 +568,16 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         long_tail_persona="someone choosing where to direct a year-end donation",
         # NGO is the specific schema type; plain "Organization" is too generic.
         schema_types=("NGO", "GovernmentOrganization"),
-        keywords=("donate", "donation", "nonprofit", "non-profit", "charity", "volunteer", "mission", "impact"),
+        keywords=(
+            "donate",
+            "donation",
+            "nonprofit",
+            "non-profit",
+            "charity",
+            "volunteer",
+            "mission",
+            "impact",
+        ),
         path_hints=("/donate", "/give", "/volunteer", "/impact"),
     ),
     CategoryDef(
@@ -364,7 +706,9 @@ def detect_category(
     nav_paths = _nav_paths(soup)
     text = _meta_text(soup)
 
-    scores: list[_DetectionScore] = [_DetectionScore(c) for c in CATEGORY_DEFS if c.slug != "generic"]
+    scores: list[_DetectionScore] = [
+        _DetectionScore(c) for c in CATEGORY_DEFS if c.slug != "generic"
+    ]
 
     for s in scores:
         for st in s.cat.schema_types:
@@ -393,9 +737,12 @@ def detect_category(
                 s.signals.append(f"keyword: '{kw}'")
 
     # Pick best; require a meaningful score to avoid false confidence on
-    # near-empty or unparseable pages.
+    # near-empty or unparseable pages. Threshold of 3.5 means a single weak
+    # nav-link match (2.0) on its own won't classify — we need either two
+    # corroborating signals, one schema match (6.0), one strong keyword
+    # (3.0) + at least one corroboration, or a path + a couple of keywords.
     scores.sort(key=lambda x: x.score, reverse=True)
-    if not scores or scores[0].score < 2.0:
+    if not scores or scores[0].score < 3.5:
         return DetectedCategory(
             slug="generic",
             label=_CATEGORY_BY_SLUG["generic"].label,
@@ -408,7 +755,7 @@ def detect_category(
     second = scores[1].score if len(scores) > 1 else 0.0
     if best.score >= 8 and best.score >= second + 4:
         confidence = "high"
-    elif best.score >= 4:
+    elif best.score >= 5:
         confidence = "medium"
     else:
         confidence = "low"
@@ -426,6 +773,47 @@ def detect_category(
 
 _GENERIC_TITLE_WORDS = {"home", "homepage", "welcome", "page", "untitled"}
 
+# TLD-like suffixes that some brands tack onto their og:site_name (e.g.
+# "Nike.com", "Booking.com"). We strip these only when they're a *trailing*
+# fragment after a single brandy token, never inside the brand string.
+_TLD_SUFFIXES = {
+    ".com",
+    ".co",
+    ".io",
+    ".ai",
+    ".org",
+    ".net",
+    ".us",
+    ".gov",
+    ".tv",
+    ".app",
+    ".dev",
+    ".xyz",
+    ".store",
+    ".shop",
+}
+
+
+def _strip_tld_suffix(brand: str) -> str:
+    """Remove a trailing TLD-like fragment from a brand string.
+
+    ``"Nike.com"`` → ``"Nike"``. Leaves ``"IO Interactive"`` and
+    ``"Stripe"`` alone — only strips when the suffix is a recognized TLD-ish
+    token attached to the very end with a dot.
+    """
+    if not brand:
+        return brand
+    s = brand.strip()
+    # Greedy match against any of our suffixes case-insensitively.
+    lower = s.lower()
+    for suf in _TLD_SUFFIXES:
+        if lower.endswith(suf) and len(s) > len(suf) + 1:
+            stripped = s[: -len(suf)].rstrip()
+            # Don't strip if it would leave nothing meaningful.
+            if stripped:
+                return stripped
+    return s
+
 
 def extract_brand(home_html: str, host: str) -> str:
     """Best-effort brand name. Prefers og:site_name > schema.org Organization name > cleaned <title>."""
@@ -434,7 +822,7 @@ def extract_brand(home_html: str, host: str) -> str:
     if isinstance(og, Tag) and og.get("content"):
         cand = " ".join(str(og["content"]).split()).strip()
         if cand:
-            return cand
+            return _strip_tld_suffix(cand)
 
     # Schema.org Organization / WebSite name
     for script in soup.find_all("script", attrs={"type": "application/ld+json"}):
@@ -459,7 +847,7 @@ def extract_brand(home_html: str, host: str) -> str:
                 if isinstance(name, str):
                     cand = " ".join(name.split()).strip()
                     if cand:
-                        return cand
+                        return _strip_tld_suffix(cand)
 
     title_tag = soup.find("title")
     if title_tag:
@@ -469,12 +857,8 @@ def extract_brand(home_html: str, host: str) -> str:
         segments = [s.strip() for s in segments if s.strip()]
         if segments:
             shortest = min(segments, key=len)
-            if (
-                shortest
-                and len(shortest) <= 40
-                and shortest.lower() not in _GENERIC_TITLE_WORDS
-            ):
-                return shortest
+            if shortest and len(shortest) <= 40 and shortest.lower() not in _GENERIC_TITLE_WORDS:
+                return _strip_tld_suffix(shortest)
 
     # Fallback: humanize the host.
     base = host.removeprefix("www.").split(".", 1)[0]
@@ -492,6 +876,290 @@ def _iter_jsonld_nodes(data):
             for item in data["@graph"]:
                 yield from _iter_jsonld_nodes(item)
         yield data
+
+
+# ---- Page-signal extraction (topics for prompt interpolation) --------------
+
+
+# Generic / boilerplate phrases we never want to feed into a prompt. These are
+# the chrome of every site (auth, legal, footer links) and would make every
+# prompt sound like every other prompt.
+_TOPIC_STOPLIST = {
+    "home",
+    "homepage",
+    "about",
+    "about us",
+    "contact",
+    "contact us",
+    "contact sales",
+    "talk to sales",
+    "login",
+    "log in",
+    "sign in",
+    "sign up",
+    "signup",
+    "register",
+    "search",
+    "help",
+    "support",
+    "privacy",
+    "privacy policy",
+    "terms",
+    "terms of use",
+    "terms of service",
+    "careers",
+    "press",
+    "blog",
+    "newsletter",
+    "subscribe",
+    "gift cards",
+    "dark mode",
+    "menu",
+    "cart",
+    "my account",
+    "sitemap",
+    "accessibility",
+    "cookies",
+    "cookie policy",
+    "feedback",
+    "events",
+    "frequently asked questions",
+    "faq",
+    "company",
+    "our team",
+    "team",
+    "investors",
+    "more",
+    "see more",
+    "view all",
+    "show more",
+    "learn more",
+    "discover",
+    "shop now",
+    "buy now",
+    "spotlight",
+    "trending now",
+    "new",
+    "all",
+    "today",
+    "now",
+    "categories",
+    "category",
+    "request a demo",
+    "book a demo",
+    "schedule a demo",
+    "get a demo",
+    "get the report",
+    "get the data",
+    "get started",
+    "get started for free",
+    "start free trial",
+    "free trial",
+    "start now",
+    "try it free",
+    "try for free",
+    "watch the demo",
+    "view demo",
+    "join now",
+    "download now",
+    "learn how",
+    "find out more",
+    "view pricing",
+    # A11y skip-links — invisible to sighted users but render as anchor text
+    # the topic extractor would otherwise pick up.
+    "skip to content",
+    "skip to main content",
+    "skip navigation",
+    "skip to footer",
+    "skip to navigation",
+    # Language-picker labels (Shopify, Wikipedia, etc. surface these as
+    # heading-weighted text via i18n widgets).
+    "english",
+    "español",
+    "spanish",
+    "français",
+    "french",
+    "deutsch",
+    "german",
+    "italiano",
+    "italian",
+    "português",
+    "portuguese",
+    "日本語",
+    "japanese",
+    "中文",
+    "chinese",
+    "한국어",
+    "korean",
+    "русский",
+    "russian",
+    "العربية",
+    "arabic",
+    "हिन्दी",
+    "hindi",
+    "polski",
+    "polish",
+    "nederlands",
+    "dutch",
+    "türkçe",
+    "turkish",
+}
+
+# Filler first-words that produce useless action-only fragments. A topic that
+# starts with one of these is almost always a CTA ("Get the report", "Talk to
+# sales", "Book a demo") and adds noise to the long-tail prompt.
+_TOPIC_BAD_FIRST_WORDS = {
+    "click",
+    "tap",
+    "copy",
+    "open",
+    "read",
+    "go",
+    "view",
+    "see",
+    "check",
+    "get",
+    "talk",
+    "request",
+    "book",
+    "schedule",
+    "join",
+    "start",
+    "try",
+    "explore",
+    "browse",
+    "find",
+    "learn",
+    "discover",
+    "shop",
+    "buy",
+    "watch",
+    "download",
+    "install",
+    "subscribe",
+    "register",
+    "sign",
+    "log",
+    "contact",
+    "become",
+    "create",
+    "make",
+    "build",
+    "stay",
+    "save",
+    "share",
+}
+
+_TOPIC_PHRASE_LEN_MIN = 4
+_TOPIC_PHRASE_LEN_MAX = 50
+
+# "What's New", ", new", ", beta" badges on nav links that get concatenated
+# into the text content. We strip these as a trailing suffix only.
+_TOPIC_BADGE_SUFFIX = re.compile(
+    r"\s*,?\s+(new|beta|soon|coming soon|preview|alpha)$", re.IGNORECASE
+)
+
+
+def _normalize_topic(s: str) -> str:
+    """Clean up a candidate topic string: collapse repeated tokens and strip
+    badge suffixes that nav-link rendering frequently glues on.
+
+    Real-world example: Airbnb's "Experiences" nav link with a "NEW" badge
+    renders as the text ``"Experiences Experiences, NEW"``. We collapse the
+    duplication and strip the badge so the topic is just ``"experiences"``.
+    """
+    s = s.strip()
+    # Collapse internal whitespace to a single space.
+    s = re.sub(r"\s+", " ", s)
+    # Remove trailing badge suffixes (case-insensitive).
+    s = _TOPIC_BADGE_SUFFIX.sub("", s, count=1)
+    # Dedupe consecutive identical tokens. Comparison strips trailing
+    # punctuation so "Experiences" and "Experiences," collapse together.
+    tokens = s.split(" ")
+    deduped: list[str] = []
+    for tok in tokens:
+        cmp = re.sub(r"[^a-zA-Z0-9]+$", "", tok).lower()
+        prev_cmp = re.sub(r"[^a-zA-Z0-9]+$", "", deduped[-1]).lower() if deduped else ""
+        if cmp and cmp == prev_cmp:
+            continue
+        deduped.append(tok)
+    out = " ".join(deduped).strip()
+    # Trim trailing punctuation so prompts don't get awkward periods/commas
+    # ("…focused on flexible solutions for every business model..").
+    return out.rstrip(",;:.! ")
+
+
+def _topic_passes_filters(s: str) -> bool:
+    if not (_TOPIC_PHRASE_LEN_MIN <= len(s) <= _TOPIC_PHRASE_LEN_MAX):
+        return False
+    if s in _TOPIC_STOPLIST:
+        return False
+    first = s.split()[0] if s else ""
+    if first in _TOPIC_BAD_FIRST_WORDS:
+        return False
+    # Require at least one substantive word (3+ alpha chars) — drops "10 new",
+    # ":", emoji-only headings, etc.
+    if not re.search(r"[a-z]{3,}", s):
+        return False
+    return True
+
+
+def extract_page_topics(
+    home_html: str,
+    max_topics: int = 4,
+    exclude_brand: str | None = None,
+) -> list[str]:
+    """Return up to N candidate topic phrases from H1/H2/H3 + nav anchor text.
+
+    Used to interpolate site-specific phrases into prompt templates so the
+    output reads contextual ("…focused on vacation rentals") rather than
+    generic ("…focused on this category"). Phrases are normalized lower-case,
+    deduplicated, filtered against a boilerplate stoplist, and ranked by a
+    blend of frequency (more mentions = more central) and specificity (longer
+    phrases break ties since they carry more signal than single words).
+
+    ``exclude_brand`` filters out any phrase containing the brand name as a
+    substring — Airbnb's homepage repeats "Homes on Airbnb" three times, but
+    the long-tail prompt already mentions Airbnb, so it would read awkwardly
+    as "…focused on homes on airbnb."
+    """
+    soup = BeautifulSoup(home_html or "", "html.parser")
+    # We weight headings far more than nav anchors so that a site's footer/header
+    # ("Help Center", "Become a host") repeating 5+ times can't outrank a single
+    # H2 that captures the actual product ("Vacation Rentals"). Headings are
+    # editorial; nav is mostly chrome.
+    candidates: list[tuple[str, int]] = []
+
+    # Headings — most authoritative source of "what this site is about". H1
+    # is usually the hero; H2/H3 are section labels.
+    heading_weight = {"h1": 5, "h2": 4, "h3": 3}
+    for tag, weight in heading_weight.items():
+        for el in soup.find_all(tag, limit=12):
+            t = el.get_text(" ", strip=True)
+            if t:
+                candidates.append((t, weight))
+
+    # Nav anchor text — captures category labels like "Stays" / "Experiences"
+    # on Airbnb that don't appear in any heading. Cap by length so we skip
+    # legal/footer copy and ad-style "Save 20% on your first order!" CTAs.
+    for a in soup.find_all("a", limit=120):
+        t = a.get_text(" ", strip=True)
+        if t and 3 <= len(t) <= 40:
+            candidates.append((t, 1))
+
+    brand_lc = (exclude_brand or "").strip().lower()
+
+    weighted: dict[str, int] = {}
+    for raw, weight in candidates:
+        norm = _normalize_topic(raw).lower()
+        if not _topic_passes_filters(norm):
+            continue
+        if brand_lc and brand_lc in norm:
+            continue
+        weighted[norm] = weighted.get(norm, 0) + weight
+
+    ranked = sorted(weighted.items(), key=lambda kv: (kv[1], len(kv[0])), reverse=True)
+    return [t for t, _ in ranked[:max_topics]]
 
 
 # ---- Prompt generation -----------------------------------------------------
@@ -521,11 +1189,36 @@ def _indef(noun: str) -> str:
     return "an" if n and n[0] in "aeiou" else "a"
 
 
-def generate_prompts(category_slug: str, brand: str) -> list[TestPrompt]:
-    """Render the four prompt angles for the given category."""
+def generate_prompts(
+    category_slug: str,
+    brand: str,
+    topics: list[str] | None = None,
+) -> list[TestPrompt]:
+    """Render the four prompt angles for the given category.
+
+    ``topics`` are site-specific topic phrases extracted from the homepage
+    (see :func:`extract_page_topics`). When supplied, the strongest topic is
+    woven into the long-tail prompt so it reads site-specific instead of
+    template-y. We deliberately don't interpolate into ``use_case`` or
+    ``category`` — those are deliberately written as universal queries an AI
+    engine would actually receive from a generic shopper, and stuffing
+    site-specific phrasing into them would defeat the test (we want to see
+    if the engine cites the user's site for a *neutral* query). The
+    long-tail prompt, by contrast, is meant to be specific — that's where
+    topic interpolation adds signal.
+    """
     cat = get_category(category_slug)
     brand = (brand or "").strip() or "this site"
     art = _indef(cat.descriptor)
+    primary_topic = (topics or [None])[0] if (topics and category_slug != "generic") else None
+
+    if primary_topic:
+        long_tail_text = (
+            f"Recommend {art} {cat.descriptor} for {cat.long_tail_persona} "
+            f"focused on {primary_topic}."
+        )
+    else:
+        long_tail_text = f"Recommend {art} {cat.descriptor} for {cat.long_tail_persona}."
 
     prompts: list[tuple[str, str, str, str]] = [
         (
@@ -549,7 +1242,7 @@ def generate_prompts(category_slug: str, brand: str) -> list[TestPrompt]:
         (
             "long_tail",
             "Long-tail / persona",
-            f"Recommend {art} {cat.descriptor} for {cat.long_tail_persona}.",
+            long_tail_text,
             "Tests whether you surface for specific persona queries — usually the highest-intent traffic.",
         ),
     ]
@@ -585,7 +1278,8 @@ def build_test_prompts_bundle(
         detected = detect_category(home_html, jsonld_blocks, host)
 
     brand = extract_brand(home_html, host)
-    prompts = generate_prompts(detected.slug, brand)
+    topics = extract_page_topics(home_html, exclude_brand=brand)
+    prompts = generate_prompts(detected.slug, brand, topics=topics)
     return TestPromptsBundle(
         detected_category=detected,
         brand=brand,
