@@ -62,7 +62,7 @@ All LLM probes are **optional** and degrade gracefully when their key is missing
 | `GEMINI_API_KEY`  | Gemini w/ Google Search grounding |
 | `MISTRAL_API_KEY` | Mistral w/ web-search tool |
 | `BRAVE_API_KEY`   | Brave Search API |
-| `GROQ_API_KEY`    | Groq `compound-beta` w/ web search |
+| `GROQ_API_KEY`    | Groq `compound-beta` w/ web search; also powers the optional LLM polish pass over AI-search test prompts (`llama-3.3-70b-versatile`). Falls back to template prompts if missing or the call fails. |
 | _(none)_          | Duck.ai best-effort browser-less probe |
 
 ### Frontend
