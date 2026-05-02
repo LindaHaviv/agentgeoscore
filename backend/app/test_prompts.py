@@ -192,7 +192,6 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
             "athletic",
             "sneakers",
             "footwear",
-            "performance gear",
             "basketball",
             "soccer",
             "tennis",
@@ -526,7 +525,6 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         long_tail_persona="a first-time buyer in a competitive market",
         schema_types=("RealEstateAgent", "RealEstateListing"),
         keywords=(
-            "homes for sale",
             "for sale",
             "for rent",
             "listings",
@@ -548,7 +546,6 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         long_tail_persona="a shopper researching the brand behind a product they use",
         schema_types=("Brand",),
         keywords=(
-            "our brands",
             "flavors",
             "ingredients",
             "responsibility",
