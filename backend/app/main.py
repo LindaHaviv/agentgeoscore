@@ -34,6 +34,7 @@ from .scanners import (
 from .scoring import build_category, build_fixes, grade_for, overall_score
 from .targets import WebsiteTarget
 from .test_prompts import build_test_prompts_bundle, list_categories
+from .test_prompts_llm import maybe_polish_prompts
 
 # Populate os.environ from .env *before* reading any config values below, so
 # a local .env can override production defaults without needing real OS env
@@ -160,6 +161,11 @@ async def scan(req: ScanRequest) -> Report:
     fixes = build_fixes(categories, target.host)
     # Build AI-search test prompts from the same parse outputs — no extra fetch.
     test_prompts = build_test_prompts_bundle(home_html, jsonld_blocks, target.host)
+    # Optional polish pass: if GROQ_API_KEY is set, rewrite the four templated
+    # prompts through llama-3.3-70b so they sound natural and site-specific.
+    # Falls back to the template prompts if the key is missing or the call
+    # fails for any reason.
+    test_prompts = await maybe_polish_prompts(test_prompts, home_html=home_html)
 
     return Report(
         url=str(req.url),
@@ -206,6 +212,8 @@ async def test_prompts_override(
         bundle = build_test_prompts_bundle(
             home_html, jsonld_blocks, target.host, category_override=category
         )
+        # Same optional LLM polish pass as the main scan — fails open.
+        bundle = await maybe_polish_prompts(bundle, home_html=home_html)
     return bundle.model_dump()
 
 
