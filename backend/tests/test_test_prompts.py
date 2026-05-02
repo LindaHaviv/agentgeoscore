@@ -258,6 +258,21 @@ def test_list_categories_returns_tuples_of_slug_and_label():
 
 
 @pytest.mark.parametrize("cat", [c for c in CATEGORY_DEFS])
+def test_keywords_and_strong_keywords_are_disjoint(cat):
+    """Regression: a phrase appearing in both ``keywords`` (1.0) and
+    ``strong_keywords`` (3.0) double-counts in the scoring loop, inflating
+    the final score by 4.0 instead of 3.0. Caught originally by Devin
+    Review on PR #11 — three new categories had overlapping terms.
+    """
+    overlap = set(cat.keywords) & set(cat.strong_keywords)
+    assert overlap == set(), (
+        f"category {cat.slug!r} has overlapping terms in keywords + "
+        f"strong_keywords: {overlap}. Remove from `keywords` — the 3.0 "
+        f"weight in `strong_keywords` already supersedes the 1.0 weight."
+    )
+
+
+@pytest.mark.parametrize("cat", [c for c in CATEGORY_DEFS])
 def test_every_category_renders_four_non_empty_prompts(cat):
     prompts = generate_prompts(cat.slug, "Brand")
     assert len(prompts) == 4
