@@ -1,4 +1,4 @@
-import type { Report, TestPromptsBundle } from './types';
+import type { CompareResponse, Report, TestPromptsBundle } from './types';
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
 
@@ -44,6 +44,36 @@ export async function scanUrl(url: string): Promise<Report> {
 export function normalizeDomain(input: string): string {
   const cleaned = input.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   return cleaned.toLowerCase();
+}
+
+/**
+ * Run a side-by-side compare of the target site vs 1-3 competitor domains.
+ *
+ * Backend reuses the existing scan pipeline (citation probes off) and caches
+ * each result for 1 hour, so subsequent compares against the same competitor
+ * return instantly.
+ */
+export async function compareCompetitors(
+  target: string,
+  competitors: string[],
+): Promise<CompareResponse> {
+  const targetUrl = /^https?:\/\//i.test(target) ? target : `https://${target}`;
+  const resp = await fetch(`${BASE}/api/compare`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target: targetUrl, competitors }),
+  });
+  if (!resp.ok) {
+    let detail = `HTTP ${resp.status}`;
+    try {
+      const body = await resp.json();
+      detail = body.detail || JSON.stringify(body);
+    } catch {
+      // ignore
+    }
+    throw new Error(detail);
+  }
+  return (await resp.json()) as CompareResponse;
 }
 
 /**

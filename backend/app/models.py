@@ -123,3 +123,48 @@ class Report(BaseModel):
     fixes: list[Fix]
     test_prompts: TestPromptsBundle | None = None
     errors: list[str] = Field(default_factory=list)
+
+
+# ---- Compare ---------------------------------------------------------------
+
+
+class CategorySummary(BaseModel):
+    """Lean per-category snapshot used by the compare endpoint.
+
+    Drops checks/details to keep the payload small; the full report is one
+    click away if the user wants to drill into a specific competitor.
+    """
+
+    id: CategoryId
+    label: str
+    score: int = Field(ge=0, le=100)
+
+
+class CompareSummary(BaseModel):
+    """Lean per-domain snapshot for side-by-side rendering."""
+
+    domain: str
+    url: str
+    score: int = Field(ge=0, le=100)
+    grade: Literal["A", "B", "C", "D", "F", "?"]
+    categories: list[CategorySummary]
+    duration_ms: int
+    error: str | None = None
+    cached: bool = False
+
+
+class CompareRequest(BaseModel):
+    """``POST /api/compare`` payload.
+
+    ``target`` is the site whose report initiated the compare; ``competitors``
+    are 1-3 other domains (or full URLs) to scan in parallel and stack
+    against the target.
+    """
+
+    target: HttpUrl
+    competitors: list[str] = Field(min_length=1, max_length=3)
+
+
+class CompareResponse(BaseModel):
+    target: CompareSummary
+    competitors: list[CompareSummary]
