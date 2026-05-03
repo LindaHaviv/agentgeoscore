@@ -205,6 +205,23 @@ META_DESC_SNIPPET = (
     'that describes what visitors (and AI agents) will find here." />'
 )
 
+JS_RENDERING_SNIPPET = """// Next.js — opt the route into static / server rendering
+// app/page.tsx
+export const dynamic = 'force-static';   // or 'force-dynamic' for SSR
+export default async function Page() {
+  const data = await getData();          // fetched at build- or request-time
+  return <Hero data={data} />;
+}
+
+// Nuxt — useAsyncData runs server-side by default; just don't gate hero copy on
+// browser-only APIs (`window`, `document`, `localStorage`).
+
+// Plain SPA — pre-render with a build-time crawler. Vite-React example:
+//   npm i -D vite-plugin-prerender
+//   plugins: [prerender({ routes: ['/', '/pricing', '/about'] })]
+
+// Last resort — proxy crawler UAs through a service like prerender.io."""
+
 
 FIX_LIBRARY: dict[str, FixTemplate] = {
     # Discoverability ---------------------------------------------------------
@@ -232,6 +249,18 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "snippet": CANONICAL_SNIPPET,
         "snippet_language": "html",
         "docs_url": "https://developers.google.com/search/docs/crawling-indexing/canonicalization",
+    },
+    "js_rendering": {
+        "severity_on_fail": "critical",
+        "severity_on_warn": "important",
+        "effort": "high",
+        "score_lift_fail": 8,
+        "score_lift_warn": 4,
+        "title_fail": "Server-render or pre-render your homepage HTML",
+        "title_warn": "Move more of your homepage out of client-side JS",
+        "snippet": JS_RENDERING_SNIPPET,
+        "snippet_language": "javascript",
+        "docs_url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics",
     },
     # Agent Access ------------------------------------------------------------
     "robots_exists": {
