@@ -29,6 +29,7 @@ from .scanners import (
     check_content_clarity,
     check_discoverability,
     check_js_rendering,
+    check_multipage_depth,
     check_structured_data,
     extract_jsonld,
 )
@@ -125,6 +126,12 @@ async def scan(req: ScanRequest) -> Report:
         # as sitemap / HTTPS.
         js_render_checks = check_js_rendering(home_html)
 
+        # Multi-page sample — fetches up to 2 internal content URLs in
+        # parallel and summarizes their depth. Surfaced under Content Clarity
+        # since the framing is "is your content actually readable beyond the
+        # homepage."
+        multipage_task = check_multipage_depth(target, fetcher, home_html)
+
         # Live probes in parallel
         probe_tasks: list = []
         if req.include_probe:
@@ -140,15 +147,17 @@ async def scan(req: ScanRequest) -> Report:
         results = await asyncio.gather(
             agent_access_task,
             discoverability_task,
+            multipage_task,
             *probe_tasks,
             return_exceptions=True,
         )
 
-    # Unpack (first two are scanner lists, rest are probe CheckResults)
+    # Unpack (first three are scanner lists, rest are probe CheckResults)
     agent_access_checks = _unwrap(results[0], errors, "agent_access")
     discoverability_checks = _unwrap(results[1], errors, "discoverability")
+    multipage_checks = _unwrap(results[2], errors, "multipage_depth")
     probe_checks = []
-    for res in results[2:]:
+    for res in results[3:]:
         probe_checks.append(_unwrap_single(res, errors, "probe"))
 
     categories = [
@@ -158,7 +167,10 @@ async def scan(req: ScanRequest) -> Report:
             (discoverability_checks or []) + js_render_checks,
         ),
         build_category(CategoryId.STRUCTURED_DATA, structured_data_checks),
-        build_category(CategoryId.CONTENT_CLARITY, content_checks),
+        build_category(
+            CategoryId.CONTENT_CLARITY,
+            content_checks + (multipage_checks or []),
+        ),
     ]
     probe_checks_clean = [c for c in probe_checks if c is not None]
     if probe_checks_clean:
