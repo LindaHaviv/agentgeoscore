@@ -533,3 +533,44 @@ async def test_content_depth_picks_deepest_not_first_page() -> None:
     assert content_depth.evidence is not None
     assert content_depth.evidence["deepest_url"].endswith("/blog")
     assert content_depth.status == CheckStatus.PASS
+
+
+@pytest.mark.asyncio
+async def test_content_depth_warn_above_sweet_spot_without_subheadings() -> None:
+    """Devin Review #18 regression: 2501–4000 words with <3 sub-headings must
+    NOT be reported as 'well-structured' — the lack of H2/H3 makes it hard
+    for AI engines to extract sub-claims regardless of total length."""
+    home = _homepage_with_links("/blog")
+    pages = {
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page_with_subheads(words=3500, subheads=0),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.status == CheckStatus.WARN
+    # Must NOT contain the contradictory "well-structured with 0 sub-heading(s)" wording.
+    assert "well-structured" not in content_depth.detail
+    # Must explicitly cite the missing structure.
+    assert "sub-heading" in content_depth.detail
+
+
+@pytest.mark.asyncio
+async def test_content_depth_pass_above_sweet_spot_with_subheadings() -> None:
+    """Counterpart: 2501–4000 words WITH ≥3 sub-headings should still PASS
+    so the WARN branch above can't silently swallow the well-structured case."""
+    home = _homepage_with_links("/blog")
+    pages = {
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page_with_subheads(words=3500, subheads=5),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.status == CheckStatus.PASS
+    assert content_depth.score == pytest.approx(0.85)
+    assert "well-structured" in content_depth.detail

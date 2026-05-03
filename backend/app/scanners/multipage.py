@@ -568,14 +568,29 @@ def _build_content_depth_check(stats_list: list[_PageStats]) -> CheckResult:
             f"are likeliest to cite pages in this depth band as primary sources."
         )
     elif words <= _DEPTH_LONG:
-        status = CheckStatus.PASS
-        score = 0.85
-        detail = (
-            f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
-            f"— above Princeton's 1500–2500-word sweet spot but still well-structured "
-            f"with {subheads} sub-heading(s). AI engines can extract sub-claims as "
-            f"long as the page stays scannable."
-        )
+        # 2501–4000: long-but-not-yet-wall-of-text. Split on sub-heading
+        # density the same way the >_DEPTH_LONG branch does — without H2/H3
+        # structure even a 3500-word page is hard for AI engines to extract
+        # sub-claims from, so don't claim it's "well-structured" if it isn't.
+        if subheads >= _DEPTH_MIN_SUBHEADS:
+            status = CheckStatus.PASS
+            score = 0.85
+            detail = (
+                f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
+                f"— above Princeton's 1500–2500-word sweet spot but still well-structured "
+                f"with {subheads} sub-heading(s). AI engines can extract sub-claims as "
+                f"long as the page stays scannable."
+            )
+        else:
+            status = CheckStatus.WARN
+            score = 0.55
+            detail = (
+                f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
+                f"with only {subheads} sub-heading(s) — above Princeton's 1500–2500-word "
+                f"sweet spot but lacking the H2/H3 structure that lets AI engines extract "
+                f"discrete sub-claims. Add at least {_DEPTH_MIN_SUBHEADS} sub-headings, or "
+                f"trim to land inside the sweet spot."
+            )
     else:
         # > _DEPTH_LONG — split on subheading density.
         if subheads >= _DEPTH_MIN_SUBHEADS:
