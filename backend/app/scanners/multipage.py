@@ -90,6 +90,23 @@ _PATH_PRIORITY: tuple[tuple[re.Pattern[str], int, str], ...] = (
 )
 
 
+# Princeton GEO 2024 ("GEO: Generative Engine Optimization", arXiv:2311.09735)
+# found a strong citation lift on content in roughly the 1500–2500-word band:
+# below ~800 words AI engines treat the page as too thin to cite as a primary
+# source; above ~4000 with no sub-headings becomes a wall-of-text that's hard
+# to extract sub-claims from. Thresholds below encode that finding so we can
+# warn on both ends.
+_DEPTH_THIN = 800           # below this is FAIL — unlikely to be cited as primary source
+_DEPTH_BELOW_SWEET = 1500   # below this is WARN — passable but under sweet spot
+_DEPTH_ABOVE_SWEET = 2500   # above this transitions to "long" territory
+_DEPTH_LONG = 4000          # above this requires sub-headings to stay parseable
+_DEPTH_MIN_SUBHEADS = 3     # >_DEPTH_LONG with fewer subheads = wall-of-text WARN
+
+# Average adult reading speed (words per minute). Used only to render a
+# friendly "~N min read" hint in the detail string.
+_READING_WPM = 230
+
+
 @dataclass
 class _PageStats:
     """What we extract from each sampled page."""
@@ -102,6 +119,7 @@ class _PageStats:
     has_jsonld: bool = False
     has_recent_date: bool = False
     outbound_citations: int = 0
+    subheading_count: int = 0  # h2 + h3 — used by the content_depth check
     detected_topic: str = ""  # which priority tier matched
 
     @property
@@ -283,13 +301,21 @@ def _has_recent_date_signal(soup: BeautifulSoup) -> bool:
     return False
 
 
-def _summarize_page(html: str, base_host: str) -> tuple[int, bool, bool, int]:
-    """Return ``(word_count, has_jsonld, has_recent_date, outbound_citations)``."""
+def _summarize_page(html: str, base_host: str) -> tuple[int, bool, bool, int, int]:
+    """Return ``(word_count, has_jsonld, has_recent_date, outbound_citations, subheadings)``.
+
+    ``subheadings`` is the count of ``<h2>`` + ``<h3>`` tags on the page, used
+    by the content-depth check to decide whether a long page is structured
+    enough that AI engines can extract sub-claims from it.
+    """
     if not html:
-        return 0, False, False, 0
+        return 0, False, False, 0, 0
     soup = BeautifulSoup(html, "html.parser")
     has_jsonld = soup.find("script", attrs={"type": "application/ld+json"}) is not None
     has_recent = _has_recent_date_signal(soup)
+    # Count sub-headings before stripping anything — these survive script/style
+    # decomposition anyway, but we want the count to reflect the rendered DOM.
+    subheadings = len(soup.find_all(["h2", "h3"]))
     # Strip script/style/noscript before counting visible words — same rule
     # as content_clarity / js_rendering for consistency.
     for tag in soup(["script", "style", "noscript"]):
@@ -308,7 +334,7 @@ def _summarize_page(html: str, base_host: str) -> tuple[int, bool, bool, int]:
             continue
         if host and host != base_host:
             outbound += 1
-    return word_count, has_jsonld, has_recent, outbound
+    return word_count, has_jsonld, has_recent, outbound, subheadings
 
 
 async def _fetch_and_summarize(
@@ -326,11 +352,14 @@ async def _fetch_and_summarize(
         stats.error = result.error or f"HTTP {result.status}"
         return stats
     stats.fetched = True
-    word_count, has_jsonld, has_date, citations = _summarize_page(result.text, base_host)
+    word_count, has_jsonld, has_date, citations, subheads = _summarize_page(
+        result.text, base_host
+    )
     stats.word_count = word_count
     stats.has_jsonld = has_jsonld
     stats.has_recent_date = has_date
     stats.outbound_citations = citations
+    stats.subheading_count = subheads
     return stats
 
 
@@ -469,18 +498,142 @@ def _describe_sample(stats: list[_PageStats]) -> str:
     return ", ".join(_short_path(s.url) for s in stats)
 
 
+def _content_depth_skip(detail: str) -> CheckResult:
+    """Skip-status placeholder for the content_depth row.
+
+    Used when there's nothing meaningful to evaluate (no sampled pages, every
+    sample failed, etc.). We still emit the row so users see *why* the signal
+    is missing rather than wondering whether it ran at all.
+    """
+    return CheckResult(
+        id="content_depth",
+        label="Article-length signal on content pages",
+        status=CheckStatus.SKIP,
+        score=0.0,
+        weight=1.5,
+        detail=detail,
+        evidence=None,
+    )
+
+
+def _build_content_depth_check(stats_list: list[_PageStats]) -> CheckResult:
+    """Score the deepest sampled page against Princeton's word-count band.
+
+    We pick the *longest* successfully-fetched page rather than averaging,
+    because GEO citation behaviour rewards having at least one substantive
+    page on the site — a thin homepage + one 1800-word blog post is enough
+    to start getting cited. Averaging would punish that pattern.
+    """
+    successful = [s for s in stats_list if s.fetched and not s.error]
+    if not successful:
+        return _content_depth_skip(
+            "No sampled content page was reachable, so we can't score article "
+            "length yet. Fix the multi-page sample issue above first — once a "
+            "content URL fetches cleanly we'll measure word count and "
+            "sub-heading structure here."
+        )
+
+    deepest = max(successful, key=lambda s: s.word_count)
+    words = deepest.word_count
+    subheads = deepest.subheading_count
+    minutes = max(1, round(words / _READING_WPM))
+    where = _short_path(deepest.url)
+
+    if words < _DEPTH_THIN:
+        status = CheckStatus.FAIL
+        score = 0.15
+        detail = (
+            f"Deepest sampled page ({where}) is only {words} words — below the "
+            f"~{_DEPTH_THIN}-word floor where AI engines start treating a page "
+            f"as a primary source. Princeton's GEO 2024 study found the "
+            f"1500–2500-word band gets cited disproportionately. Aim to grow "
+            f"your flagship content page to at least {_DEPTH_BELOW_SWEET} words "
+            f"of substantive text (not boilerplate)."
+        )
+    elif words < _DEPTH_BELOW_SWEET:
+        status = CheckStatus.WARN
+        score = 0.55
+        detail = (
+            f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
+            f"— readable but under Princeton's 1500–2500-word citation sweet "
+            f"spot. Consider expanding flagship pages with concrete examples, "
+            f"data, and answered sub-questions until they sit in that band."
+        )
+    elif words <= _DEPTH_ABOVE_SWEET:
+        status = CheckStatus.PASS
+        score = 1.0
+        detail = (
+            f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
+            f"— inside Princeton's 1500–2500-word citation sweet spot. AI engines "
+            f"are likeliest to cite pages in this depth band as primary sources."
+        )
+    elif words <= _DEPTH_LONG:
+        status = CheckStatus.PASS
+        score = 0.85
+        detail = (
+            f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
+            f"— above Princeton's 1500–2500-word sweet spot but still well-structured "
+            f"with {subheads} sub-heading(s). AI engines can extract sub-claims as "
+            f"long as the page stays scannable."
+        )
+    else:
+        # > _DEPTH_LONG — split on subheading density.
+        if subheads >= _DEPTH_MIN_SUBHEADS:
+            status = CheckStatus.PASS
+            score = 0.7
+            detail = (
+                f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
+                f"— long-form, but {subheads} sub-headings keep it parseable. AI "
+                f"engines can still extract sub-claims. Consider whether splitting "
+                f"into a series would lift each piece into Princeton's 1500–2500-word "
+                f"sweet spot."
+            )
+        else:
+            status = CheckStatus.WARN
+            score = 0.4
+            detail = (
+                f"Deepest sampled page ({where}) is {words} words (~{minutes} min read) "
+                f"with only {subheads} sub-heading(s) — a wall-of-text. AI engines "
+                f"struggle to extract discrete sub-claims from long pages without "
+                f"H2/H3 structure. Add at least {_DEPTH_MIN_SUBHEADS} sub-headings, "
+                f"or split into separate posts so each piece sits in Princeton's "
+                f"1500–2500-word sweet spot."
+            )
+
+    evidence = {
+        "deepest_url": deepest.url,
+        "word_count": words,
+        "subheading_count": subheads,
+        "reading_minutes": minutes,
+        "sweet_spot": [_DEPTH_BELOW_SWEET, _DEPTH_ABOVE_SWEET],
+        "thin_threshold": _DEPTH_THIN,
+        "long_threshold": _DEPTH_LONG,
+        "sampled_word_counts": [
+            {"url": s.url, "word_count": s.word_count, "subheadings": s.subheading_count}
+            for s in successful
+        ],
+    }
+    return CheckResult(
+        id="content_depth",
+        label="Article-length signal on content pages",
+        status=status,
+        score=round(score, 3),
+        weight=1.5,
+        detail=detail,
+        evidence=evidence,
+    )
+
+
 async def check_multipage_depth(
     target: WebsiteTarget, fetcher: Fetcher, home_html: str
 ) -> list[CheckResult]:
-    """Run the multi-page sample audit. Always returns exactly one CheckResult.
+    """Run the multi-page sample audit. Returns the depth row + content_depth row.
 
-    Wrapped in a list to match the calling convention used by every other
-    scanner (``check_*`` returning ``list[CheckResult]``), even though we
-    only ever emit one row.
+    The content-depth check shares the multi-page sampler's fetches — it
+    inspects the deepest of the same pages — so we don't pay for any extra
+    HTTP traffic to add the article-length signal.
     """
     if not home_html:
-        # Homepage fetch failed — there's nothing to extract URLs from. Skip
-        # rather than fail; the homepage-fetch failure is reported elsewhere.
         return [
             CheckResult(
                 id="multipage_depth",
@@ -490,13 +643,26 @@ async def check_multipage_depth(
                 weight=1.5,
                 detail="Homepage fetch failed; can't sample internal pages.",
                 evidence=None,
-            )
+            ),
+            _content_depth_skip(
+                "Homepage fetch failed; can't measure article length on inner pages."
+            ),
         ]
     picked = pick_sample_urls(home_html, target)
     if not picked:
-        return [_build_check_from_stats([], [])]
+        return [
+            _build_check_from_stats([], []),
+            _content_depth_skip(
+                "No sampled content page available — see the multi-page row above. "
+                "Article length is measured on the same pages we sample for depth."
+            ),
+        ]
     stats = await asyncio.gather(
         *(_fetch_and_summarize(c, fetcher, target.host) for c in picked),
         return_exceptions=False,
     )
-    return [_build_check_from_stats(list(stats), picked)]
+    stats_list = list(stats)
+    return [
+        _build_check_from_stats(stats_list, picked),
+        _build_content_depth_check(stats_list),
+    ]

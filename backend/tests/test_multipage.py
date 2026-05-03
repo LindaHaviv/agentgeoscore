@@ -190,11 +190,14 @@ def test_recent_date_signal_rejects_old_date() -> None:
 
 def test_summarize_page_counts_words_and_jsonld() -> None:
     html = _content_page(words=400, with_jsonld=True, with_recent_date=True)
-    word_count, has_jsonld, has_date, citations = _summarize_page(html, "example.com")
+    word_count, has_jsonld, has_date, citations, subheads = _summarize_page(
+        html, "example.com"
+    )
     assert word_count >= 400
     assert has_jsonld is True
     assert has_date is True
     assert citations == 0
+    assert subheads == 0  # _content_page emits an h1, no h2/h3
 
 
 def test_summarize_page_counts_outbound_citations_only() -> None:
@@ -206,13 +209,35 @@ def test_summarize_page_counts_outbound_citations_only() -> None:
         '<a href="https://nytimes.com/x">cite 2</a>'
         "</body></html>"
     )
-    _, _, _, citations = _summarize_page(html, "example.com")
+    _, _, _, citations, _ = _summarize_page(html, "example.com")
     assert citations == 2
 
 
+def test_summarize_page_counts_subheadings() -> None:
+    html = (
+        "<html><body>"
+        "<h1>Title</h1>"
+        "<h2>Section A</h2><p>x</p>"
+        "<h3>Sub A</h3><p>y</p>"
+        "<h2>Section B</h2><p>z</p>"
+        "<h4>Ignored</h4>"
+        "</body></html>"
+    )
+    _, _, _, _, subheads = _summarize_page(html, "example.com")
+    assert subheads == 3  # 2 h2 + 1 h3, h1 and h4 not counted
+
+
 def test_summarize_page_handles_empty_html() -> None:
-    word_count, has_jsonld, has_date, citations = _summarize_page("", "example.com")
-    assert (word_count, has_jsonld, has_date, citations) == (0, False, False, 0)
+    word_count, has_jsonld, has_date, citations, subheads = _summarize_page(
+        "", "example.com"
+    )
+    assert (word_count, has_jsonld, has_date, citations, subheads) == (
+        0,
+        False,
+        False,
+        0,
+        0,
+    )
 
 
 # ---- _PageStats.per_page_score -------------------------------------------
@@ -272,12 +297,15 @@ async def test_check_multipage_depth_pass_when_pages_are_substantive() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [check] = await check_multipage_depth(_target(), fetcher, home)
+    checks = await check_multipage_depth(_target(), fetcher, home)
+    [check, content_depth] = checks
     assert check.id == "multipage_depth"
     assert check.status == CheckStatus.PASS
     assert check.evidence is not None
     assert len(check.evidence["sampled"]) == 2
     assert all(s["word_count"] >= 500 for s in check.evidence["sampled"])
+    # content_depth row is always emitted alongside the multipage row.
+    assert content_depth.id == "content_depth"
 
 
 @pytest.mark.asyncio
@@ -296,7 +324,7 @@ async def test_check_multipage_depth_warn_when_pages_thin() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [check] = await check_multipage_depth(_target(), fetcher, home)
+    [check, _content_depth] = await check_multipage_depth(_target(), fetcher, home)
     assert check.status == CheckStatus.WARN
 
 
@@ -304,24 +332,28 @@ async def test_check_multipage_depth_warn_when_pages_thin() -> None:
 async def test_check_multipage_depth_fail_all_fetches_failed() -> None:
     home = _homepage_with_links("/blog", "/about")
     fetcher = _mock_fetcher_returning({})  # every URL → 404
-    [check] = await check_multipage_depth(_target(), fetcher, home)
+    [check, content_depth] = await check_multipage_depth(_target(), fetcher, home)
     assert check.status == CheckStatus.FAIL
+    # No successful sample → content_depth must skip with an explanatory detail.
+    assert content_depth.status == CheckStatus.SKIP
 
 
 @pytest.mark.asyncio
 async def test_check_multipage_depth_skip_no_internal_links() -> None:
     home = '<html><body><div id="root"></div></body></html>'
     fetcher = _mock_fetcher_returning({})
-    [check] = await check_multipage_depth(_target(), fetcher, home)
+    [check, content_depth] = await check_multipage_depth(_target(), fetcher, home)
     assert check.status == CheckStatus.SKIP
     assert "single-page app" in check.detail.lower() or "no internal" in check.detail.lower()
+    assert content_depth.status == CheckStatus.SKIP
 
 
 @pytest.mark.asyncio
 async def test_check_multipage_depth_skip_empty_homepage() -> None:
     fetcher = _mock_fetcher_returning({})
-    [check] = await check_multipage_depth(_target(), fetcher, "")
+    [check, content_depth] = await check_multipage_depth(_target(), fetcher, "")
     assert check.status == CheckStatus.SKIP
+    assert content_depth.status == CheckStatus.SKIP
 
 
 @pytest.mark.asyncio
@@ -348,7 +380,7 @@ async def test_pass_detail_does_not_overclaim_per_page_signals() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [check] = await check_multipage_depth(_target(), fetcher, home)
+    [check, _content_depth] = await check_multipage_depth(_target(), fetcher, home)
     # Confirm the underlying threshold still triggers PASS so this test is
     # exercising the overclaim path, not skipping it.
     assert check.status == CheckStatus.PASS
@@ -360,3 +392,144 @@ async def test_pass_detail_does_not_overclaim_per_page_signals() -> None:
     assert "0/2 with a recent date" in check.detail
     # And reflect that JSON-LD coverage is partial, not universal.
     assert "1/2 with JSON-LD" in check.detail
+
+
+# ---- content_depth check (Princeton 1500–2500 word band) ------------------
+
+
+def _content_page_with_subheads(words: int, subheads: int) -> str:
+    """Build a page with N words spread across `subheads` h2 sections."""
+    parts = ["<h1>Article</h1>"]
+    per_section_words = max(1, words // max(1, subheads)) if subheads else words
+    if subheads == 0:
+        parts.append("<main><p>" + ("word " * words).strip() + "</p></main>")
+    else:
+        remaining = words
+        for i in range(subheads):
+            section_words = min(per_section_words, remaining)
+            remaining -= section_words
+            parts.append(f"<h2>Section {i + 1}</h2>")
+            parts.append(f"<p>{('word ' * section_words).strip()}</p>")
+        if remaining > 0:
+            parts.append(f"<p>{('word ' * remaining).strip()}</p>")
+    return "<!doctype html><html><body>" + "".join(parts) + "</body></html>"
+
+
+@pytest.mark.asyncio
+async def test_content_depth_pass_in_sweet_spot() -> None:
+    """1500–2500 word page → PASS, score 1.0, detail mentions the sweet spot."""
+    home = _homepage_with_links("/blog", "/about")
+    pages = {
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page_with_subheads(words=1800, subheads=4),
+        ),
+        "https://example.com/about": FetchResult(
+            url="https://example.com/about",
+            status=200,
+            text=_content_page_with_subheads(words=400, subheads=1),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.id == "content_depth"
+    assert content_depth.status == CheckStatus.PASS
+    assert content_depth.score == pytest.approx(1.0)
+    # Picked the *deepest* page (the blog), not the average.
+    assert content_depth.evidence is not None
+    assert content_depth.evidence["deepest_url"].endswith("/blog")
+    assert "1500" in content_depth.detail and "2500" in content_depth.detail
+
+
+@pytest.mark.asyncio
+async def test_content_depth_fail_when_thin() -> None:
+    """Deepest page < 800 words → FAIL with the Princeton citation rationale."""
+    home = _homepage_with_links("/blog")
+    pages = {
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page_with_subheads(words=300, subheads=2),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.status == CheckStatus.FAIL
+    assert "Princeton" in content_depth.detail
+    assert "1500" in content_depth.detail
+
+
+@pytest.mark.asyncio
+async def test_content_depth_warn_when_below_sweet_spot() -> None:
+    """800–1499 word page → WARN (passable but under sweet spot)."""
+    home = _homepage_with_links("/about")
+    pages = {
+        "https://example.com/about": FetchResult(
+            url="https://example.com/about",
+            status=200,
+            text=_content_page_with_subheads(words=1100, subheads=3),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.status == CheckStatus.WARN
+    assert "sweet spot" in content_depth.detail
+
+
+@pytest.mark.asyncio
+async def test_content_depth_warn_on_wall_of_text() -> None:
+    """>4000 words with <3 sub-headings → WARN (wall-of-text)."""
+    home = _homepage_with_links("/blog")
+    pages = {
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page_with_subheads(words=5000, subheads=1),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.status == CheckStatus.WARN
+    assert "wall-of-text" in content_depth.detail
+
+
+@pytest.mark.asyncio
+async def test_content_depth_pass_on_long_but_structured() -> None:
+    """>4000 words WITH ≥3 sub-headings → PASS (long but parseable)."""
+    home = _homepage_with_links("/blog")
+    pages = {
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page_with_subheads(words=5000, subheads=6),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.status == CheckStatus.PASS
+    assert "long-form" in content_depth.detail
+
+
+@pytest.mark.asyncio
+async def test_content_depth_picks_deepest_not_first_page() -> None:
+    """Tests the 'longest page wins' selection — first sampled url is thin,
+    second is in the sweet spot. content_depth should reflect the second."""
+    home = _homepage_with_links("/about", "/blog")  # /about ranks higher in priority
+    pages = {
+        "https://example.com/about": FetchResult(
+            url="https://example.com/about",
+            status=200,
+            text=_content_page_with_subheads(words=200, subheads=0),
+        ),
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page_with_subheads(words=2000, subheads=4),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    assert content_depth.evidence is not None
+    assert content_depth.evidence["deepest_url"].endswith("/blog")
+    assert content_depth.status == CheckStatus.PASS
