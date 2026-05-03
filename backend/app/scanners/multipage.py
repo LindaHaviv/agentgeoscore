@@ -379,43 +379,55 @@ def _build_check_from_stats(
         )
 
     avg_score = sum(s.per_page_score for s in successful) / len(successful)
+    n = len(successful)
     thin_pages = [s for s in successful if s.word_count < _WORD_OK]
+    with_jsonld = [s for s in successful if s.has_jsonld]
+    with_date = [s for s in successful if s.has_recent_date]
     no_jsonld = [s for s in successful if not s.has_jsonld]
     no_date = [s for s in successful if not s.has_recent_date]
+
+    # ``signal_summary`` describes what we *actually* observed on these pages,
+    # without overclaiming. avg_score >= 0.85 only guarantees "substantive on
+    # average," not "every page has every signal" — see PR #15 review:
+    # https://github.com/LindaHaviv/agentgeoscore/pull/15#discussion_r3178406411
+    # So we report counts, not categorical claims like "all show ...".
+    signal_summary = (
+        f"{n - len(thin_pages)}/{n} substantive (\u2265{_WORD_OK} words), "
+        f"{len(with_jsonld)}/{n} with JSON-LD, {len(with_date)}/{n} with a recent date"
+    )
 
     if avg_score >= 0.85:
         status = CheckStatus.PASS
         detail = (
-            f"Sampled {len(successful)} internal page(s) "
-            f"({_describe_sample(successful)}) — all show substantive content "
-            f"({_min_word_count(successful)}+ words), structured data, and a "
-            f"recent date. AI crawlers will see depth across the site, not just the homepage."
+            f"Sampled {n} internal page(s) ({_describe_sample(successful)}). "
+            f"{signal_summary}. AI crawlers will see depth across the site, "
+            f"not just the homepage."
         )
     elif avg_score >= 0.4:
         status = CheckStatus.WARN
-        gaps = []
+        gaps: list[str] = []
         if thin_pages:
-            gaps.append(f"{len(thin_pages)} page(s) under {_WORD_OK} words")
+            gaps.append(f"{len(thin_pages)}/{n} page(s) under {_WORD_OK} words")
         if no_jsonld:
-            gaps.append(f"{len(no_jsonld)} page(s) without JSON-LD")
+            gaps.append(f"{len(no_jsonld)}/{n} page(s) without JSON-LD")
         if no_date:
-            gaps.append(f"{len(no_date)} page(s) without a recent dateModified")
+            gaps.append(f"{len(no_date)}/{n} page(s) without a recent dateModified")
         detail = (
-            f"Sampled {len(successful)} internal page(s) "
-            f"({_describe_sample(successful)}). The homepage may be polished, but "
-            f"depth is uneven: {', '.join(gaps) if gaps else 'mixed signals'}. "
-            f"AI engines weight site-wide consistency — invest in the same rigor "
+            f"Sampled {n} internal page(s) ({_describe_sample(successful)}). "
+            f"The homepage may be polished, but depth is uneven: "
+            f"{', '.join(gaps) if gaps else 'mixed signals'}. "
+            f"AI engines weight site-wide consistency \u2014 invest in the same rigor "
             f"on content pages."
         )
     else:
         status = CheckStatus.FAIL
         detail = (
-            f"Sampled {len(successful)} internal page(s) "
-            f"({_describe_sample(successful)}) — they're either very thin "
-            f"(<{_WORD_THIN} words) or missing structured data and dates entirely. "
-            "If your homepage is the only substantive page, AI engines have nothing "
-            "to cite beyond a single URL. Heuristic — we sample at most "
-            f"{_SAMPLE_LIMIT} page(s); a full audit would crawl your top 20 by traffic."
+            f"Sampled {n} internal page(s) ({_describe_sample(successful)}) \u2014 "
+            f"{signal_summary}. They're either very thin (<{_WORD_THIN} words) or "
+            f"missing structured data and dates entirely. If your homepage is the "
+            f"only substantive page, AI engines have nothing to cite beyond a "
+            f"single URL. Heuristic \u2014 we sample at most {_SAMPLE_LIMIT} "
+            f"page(s); a full audit would crawl your top 20 by traffic."
         )
 
     evidence = {
@@ -455,10 +467,6 @@ def _short_path(url: str) -> str:
 
 def _describe_sample(stats: list[_PageStats]) -> str:
     return ", ".join(_short_path(s.url) for s in stats)
-
-
-def _min_word_count(stats: list[_PageStats]) -> int:
-    return min((s.word_count for s in stats), default=0)
 
 
 async def check_multipage_depth(
