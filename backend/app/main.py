@@ -12,8 +12,15 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 
+from .compare import run_compare
 from .fetcher import Fetcher
-from .models import CategoryId, Report, ScanRequest
+from .models import (
+    CategoryId,
+    CompareRequest,
+    CompareResponse,
+    Report,
+    ScanRequest,
+)
 from .og import render_brand_card, render_share_card
 from .probes import (
     derive_queries,
@@ -92,13 +99,14 @@ async def healthz() -> dict:
     return {"ok": True}
 
 
-@app.post("/api/scan", response_model=Report)
-async def scan(req: ScanRequest) -> Report:
-    try:
-        target = WebsiteTarget.from_url(str(req.url))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
+    """Run the full scoring pipeline for ``target`` and return a Report.
 
+    Extracted from ``scan()`` so the compare endpoint can reuse the exact
+    same pipeline (and so the in-memory cache stores the same Report shape
+    that ``/api/scan`` would produce). The endpoint shells just translate
+    inputs/errors; all real scanning logic lives here.
+    """
     started = time.perf_counter()
     errors: list[str] = []
 
@@ -134,7 +142,7 @@ async def scan(req: ScanRequest) -> Report:
 
         # Live probes in parallel
         probe_tasks: list = []
-        if req.include_probe:
+        if include_probe:
             queries = derive_queries(home_html, target.host)
             probe_tasks = [
                 probe_gemini(queries, target.host),
@@ -188,7 +196,7 @@ async def scan(req: ScanRequest) -> Report:
     test_prompts = await maybe_polish_prompts(test_prompts, home_html=home_html)
 
     return Report(
-        url=str(req.url),
+        url=target.raw_url or target.url,
         normalized_url=target.url,
         domain=target.host,
         scanned_at=datetime.now(UTC),
@@ -200,6 +208,35 @@ async def scan(req: ScanRequest) -> Report:
         test_prompts=test_prompts,
         errors=errors,
     )
+
+
+@app.post("/api/scan", response_model=Report)
+async def scan(req: ScanRequest) -> Report:
+    try:
+        target = WebsiteTarget.from_url(str(req.url))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return await _run_full_scan(target, include_probe=req.include_probe)
+
+
+@app.post("/api/compare", response_model=CompareResponse)
+async def compare(req: CompareRequest) -> CompareResponse:
+    """Run the target plus 1-3 competitor domains in parallel.
+
+    Reuses the existing scan pipeline for each domain (with citation probes
+    off, to keep latency + cost predictable) and returns a lean per-domain
+    summary stripped down to overall score + per-category score. The
+    frontend computes deltas locally.
+
+    Cached for 1 hour per normalized URL, so repeat compares against the
+    same competitors return instantly.
+    """
+    target_summary, competitors = await run_compare(
+        str(req.target),
+        req.competitors,
+        _run_full_scan,
+    )
+    return CompareResponse(target=target_summary, competitors=competitors)
 
 
 @app.get("/api/test-prompts/categories")

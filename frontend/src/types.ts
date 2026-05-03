@@ -91,3 +91,28 @@ export interface Report {
   test_prompts?: TestPromptsBundle | null;
   errors: string[];
 }
+
+// ---- Compare ----
+
+export interface CategorySummary {
+  id: CategoryId;
+  label: string;
+  score: number;
+}
+
+export interface CompareSummary {
+  domain: string;
+  url: string;
+  score: number;
+  // '?' is returned for rows where the scan failed entirely.
+  grade: 'A' | 'B' | 'C' | 'D' | 'F' | '?';
+  categories: CategorySummary[];
+  duration_ms: number;
+  error?: string | null;
+  cached: boolean;
+}
+
+export interface CompareResponse {
+  target: CompareSummary;
+  competitors: CompareSummary[];
+}
