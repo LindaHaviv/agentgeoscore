@@ -198,6 +198,12 @@ def check_structured_data(html: str) -> list[CheckResult]:
     # dateModified on Article-type schema (freshness signal)
     results.append(_check_jsonld_datemodified(jsonld))
 
+    # Validator-conformance: are the JSON-LD blocks that DO exist structurally
+    # complete per schema.org / Google Rich Results requirements? Invalid
+    # blocks silently fail for AI crawlers the same way missing ones do.
+    if jsonld:
+        results.append(_check_jsonld_validity(jsonld))
+
     return results
 
 
@@ -352,4 +358,225 @@ def _check_jsonld_datemodified(jsonld: list[dict]) -> CheckResult:
         score=0.2,
         weight=0.7,
         detail="Article schema present but no dateModified or datePublished. Adding both lifts AI citation rate ~34% (Seenos audit, 2026).",
+    )
+
+
+# ---- JSON-LD validator-conformance (gap #5) -------------------------------
+#
+# Schema.org-published types are only useful to AI crawlers if they parse —
+# Google Rich Results, Perplexity's crawler, and Schema.org's own validator
+# silently *drop* blocks that are missing required properties. A common
+# failure mode we see in the wild: `@type: "Article"` with no `headline`,
+# `@type: "Product"` with no `offers`, `@type: "FAQPage"` with malformed
+# `mainEntity` arrays. Presence ≠ validity; this check is presence-of-required.
+#
+# Required / recommended props below encode Google's rich-results requirements
+# (https://developers.google.com/search/docs/appearance/structured-data) for
+# the 6 types that matter most for AI citation surfacing. We deliberately
+# don't try to be a full JSON schema validator — just the required-field gate
+# that makes or breaks rich-result inclusion.
+_REQUIRED_BY_TYPE: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    # type: (required, recommended)
+    "Article":       (("headline", "author", "datePublished"), ("dateModified", "image", "publisher")),
+    "BlogPosting":   (("headline", "author", "datePublished"), ("dateModified", "image", "publisher")),
+    "NewsArticle":   (("headline", "author", "datePublished"), ("dateModified", "image", "publisher")),
+    "Product":       (("name",), ("image", "description", "offers", "aggregateRating", "review", "brand")),
+    "FAQPage":       (("mainEntity",), ()),
+    "Organization":  (("name", "url"), ("logo", "sameAs", "description")),
+    "Person":        (("name",), ("sameAs", "url", "jobTitle")),
+}
+
+
+def _has_prop(node: dict, prop: str) -> bool:
+    """True if ``node[prop]`` is present and not an empty/blank value."""
+    v = node.get(prop)
+    if v is None:
+        return False
+    if isinstance(v, str):
+        return bool(v.strip())
+    if isinstance(v, (list, dict)):
+        return bool(v)
+    return True
+
+
+def _node_types(node: dict) -> list[str]:
+    t = node.get("@type")
+    if isinstance(t, str):
+        return [t]
+    if isinstance(t, list):
+        return [x for x in t if isinstance(x, str)]
+    return []
+
+
+def _validate_faqpage_mainentity(node: dict) -> list[str]:
+    """FAQPage needs ``mainEntity`` to be a non-empty list of valid Questions.
+
+    Each Question item must have ``name`` (the question text) and an
+    ``acceptedAnswer`` with a non-empty ``text``. Returns a list of
+    human-readable problems, empty if the block is valid.
+    """
+    me = node.get("mainEntity")
+    if me is None:
+        return ["mainEntity missing"]
+    items = me if isinstance(me, list) else [me]
+    if not items:
+        return ["mainEntity is empty"]
+    problems: list[str] = []
+    for i, q in enumerate(items):
+        if not isinstance(q, dict):
+            problems.append(f"mainEntity[{i}] is not an object")
+            continue
+        q_types = _node_types(q)
+        if q_types and "Question" not in q_types:
+            problems.append(f"mainEntity[{i}] @type is not Question")
+        if not _has_prop(q, "name"):
+            problems.append(f"mainEntity[{i}] missing name")
+        accepted = q.get("acceptedAnswer")
+        if not isinstance(accepted, dict):
+            problems.append(f"mainEntity[{i}] missing acceptedAnswer")
+            continue
+        if not _has_prop(accepted, "text"):
+            problems.append(f"mainEntity[{i}].acceptedAnswer missing text")
+    return problems
+
+
+def _validate_block(node: dict) -> tuple[str | None, list[str], list[str]]:
+    """Inspect one JSON-LD node.
+
+    Returns ``(matched_type, missing_required, missing_recommended)`` where
+    ``matched_type`` is the first known schema.org type we found (or ``None``
+    if the node's @type isn't one we validate). ``missing_required`` non-empty
+    means the block is structurally broken for rich-result purposes.
+    """
+    types = _node_types(node)
+    for t in types:
+        if t not in _REQUIRED_BY_TYPE:
+            continue
+        required, recommended = _REQUIRED_BY_TYPE[t]
+        missing_required: list[str] = []
+        if t == "FAQPage":
+            # FAQPage has structural rules inside mainEntity — delegate.
+            faq_problems = _validate_faqpage_mainentity(node)
+            if faq_problems:
+                missing_required.extend(faq_problems)
+        else:
+            for prop in required:
+                if not _has_prop(node, prop):
+                    missing_required.append(prop)
+        missing_recommended = [p for p in recommended if not _has_prop(node, p)]
+        return t, missing_required, missing_recommended
+    return None, [], []
+
+
+def _check_jsonld_validity(jsonld: list[dict]) -> CheckResult:
+    """Verify that each present JSON-LD block has the properties its @type requires.
+
+    Only emitted when at least one block exists (the jsonld_present check
+    owns the "no JSON-LD at all" messaging).
+    """
+    validated: list[dict] = []
+    total_validated = 0
+    blocks_with_broken_required = 0
+    blocks_with_missing_recommended = 0
+    # Only validate *top-level* JSON-LD blocks, not nested support nodes.
+    # extract_jsonld already flattens @graph children into this list, so
+    # `jsonld` is the canonical set of stand-alone entities. Nested
+    # ``publisher`` / ``author`` / ``mainEntity`` sub-nodes are governed by
+    # their parent type's rules (e.g. FAQPage validates its Questions via
+    # ``_validate_faqpage_mainentity``) and must not be re-validated as
+    # if they were independent top-level entities.
+    for node in jsonld:
+        matched, missing_required, missing_recommended = _validate_block(node)
+        if matched is None:
+            continue
+        total_validated += 1
+        entry = {
+            "type": matched,
+            "missing_required": missing_required,
+            "missing_recommended": missing_recommended,
+        }
+        # Capture a stable handle for the block so the evidence list is
+        # user-debuggable — preferred order: name, headline, url, @id.
+        for handle in ("name", "headline", "url", "@id"):
+            v = node.get(handle)
+            if isinstance(v, str) and v.strip():
+                entry["label"] = v.strip()[:80]
+                break
+        validated.append(entry)
+        if missing_required:
+            blocks_with_broken_required += 1
+        elif missing_recommended:
+            blocks_with_missing_recommended += 1
+
+    if total_validated == 0:
+        return CheckResult(
+            id="jsonld_validity",
+            label="JSON-LD validity (required properties)",
+            status=CheckStatus.SKIP,
+            score=0.0,
+            weight=1.5,
+            detail=(
+                "JSON-LD is present, but none of the blocks declare a schema.org "
+                "type we validate (Article / BlogPosting / NewsArticle / Product / "
+                "FAQPage / Organization / Person). We can't check validity without "
+                "a known @type — add one of those types so AI engines (and Google "
+                "Rich Results) can actually use the data."
+            ),
+            evidence={"validated": 0, "types_checked": sorted(_REQUIRED_BY_TYPE)},
+        )
+
+    evidence = {
+        "validated": total_validated,
+        "broken_required": blocks_with_broken_required,
+        "missing_recommended": blocks_with_missing_recommended,
+        "blocks": validated,
+    }
+
+    if blocks_with_broken_required:
+        # Any block missing a required prop is invisible to validators →
+        # invisible to the rich-result layer → treated as absent by AI
+        # crawlers that check.
+        sample = next(b for b in validated if b["missing_required"])
+        return CheckResult(
+            id="jsonld_validity",
+            label="JSON-LD validity (required properties)",
+            status=CheckStatus.FAIL,
+            score=0.2,
+            weight=1.5,
+            detail=(
+                f"{blocks_with_broken_required}/{total_validated} JSON-LD block(s) are "
+                f"missing required properties — e.g. a {sample['type']} block missing "
+                f"{', '.join(sample['missing_required'][:3])}. Google Rich Results and "
+                f"AI crawlers silently drop invalid blocks, so these count as absent."
+            ),
+            evidence=evidence,
+        )
+    if blocks_with_missing_recommended:
+        sample = next(b for b in validated if b["missing_recommended"])
+        return CheckResult(
+            id="jsonld_validity",
+            label="JSON-LD validity (required properties)",
+            status=CheckStatus.WARN,
+            score=0.75,
+            weight=1.5,
+            detail=(
+                f"All {total_validated} JSON-LD block(s) declare their required "
+                f"properties. But some recommended fields are missing — e.g. a "
+                f"{sample['type']} block without {', '.join(sample['missing_recommended'][:3])}. "
+                f"Optional for rich-result validity, but strong citation signals."
+            ),
+            evidence=evidence,
+        )
+    return CheckResult(
+        id="jsonld_validity",
+        label="JSON-LD validity (required properties)",
+        status=CheckStatus.PASS,
+        score=1.0,
+        weight=1.5,
+        detail=(
+            f"All {total_validated} JSON-LD block(s) declare every required and "
+            f"recommended property we check. AI crawlers and Google Rich Results "
+            f"can parse these blocks cleanly."
+        ),
+        evidence=evidence,
     )
