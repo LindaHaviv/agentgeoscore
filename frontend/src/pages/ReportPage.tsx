@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { buildShareUrl, scanUrl } from '../api';
 import { BRAND } from '../brand';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
+import { CompetitorCompareCard } from '../components/CompetitorCompareCard';
 import { FixList } from '../components/FixList';
 import { RecommendationsCard } from '../components/RecommendationsCard';
 import { ScanningIndicator } from '../components/ScanningIndicator';
@@ -97,6 +98,12 @@ export default function ReportPage() {
               />
             </div>
           )}
+
+          <div className="mt-16">
+            <div className="rule mb-8" />
+            <div className="kicker mb-6">chapter — versus your competitors</div>
+            <CompetitorCompareCard target={report.domain} />
+          </div>
 
           <div className="mt-16">
             <div className="rule mb-8" />
