@@ -322,3 +322,41 @@ async def test_check_multipage_depth_skip_empty_homepage() -> None:
     fetcher = _mock_fetcher_returning({})
     [check] = await check_multipage_depth(_target(), fetcher, "")
     assert check.status == CheckStatus.SKIP
+
+
+@pytest.mark.asyncio
+async def test_pass_detail_does_not_overclaim_per_page_signals() -> None:
+    """PR #15 review regression: with avg_score >= 0.85 the detail must not
+    claim every page has every signal. See pull/15#discussion_r3178406411 —
+    Page A 0.9 (words + JSON-LD, no date) + Page B 0.8 (words only) averages
+    0.85 and triggers PASS, but neither page has a recent date and Page B
+    has no JSON-LD.
+    """
+    home = _homepage_with_links("/blog", "/about")
+    pages = {
+        # Page A: words + JSON-LD, no date  → per_page_score = 0.9
+        "https://example.com/blog": FetchResult(
+            url="https://example.com/blog",
+            status=200,
+            text=_content_page(words=400, with_jsonld=True, with_recent_date=False),
+        ),
+        # Page B: words only, no JSON-LD, no date  → per_page_score = 0.8
+        "https://example.com/about": FetchResult(
+            url="https://example.com/about",
+            status=200,
+            text=_content_page(words=400, with_jsonld=False, with_recent_date=False),
+        ),
+    }
+    fetcher = _mock_fetcher_returning(pages)
+    [check] = await check_multipage_depth(_target(), fetcher, home)
+    # Confirm the underlying threshold still triggers PASS so this test is
+    # exercising the overclaim path, not skipping it.
+    assert check.status == CheckStatus.PASS
+    # The detail must NOT contain the categorical "all show … structured
+    # data, and a recent date" wording from before the fix.
+    assert "all show substantive content" not in check.detail
+    assert "and a recent date" not in check.detail
+    # It MUST report the actual counts honestly: 0/2 with a recent date.
+    assert "0/2 with a recent date" in check.detail
+    # And reflect that JSON-LD coverage is partial, not universal.
+    assert "1/2 with JSON-LD" in check.detail
