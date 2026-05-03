@@ -202,6 +202,27 @@ async def test_run_compare_runs_in_parallel_and_returns_each_summary() -> None:
 
 
 @pytest.mark.asyncio
+async def test_run_compare_drops_competitor_when_it_matches_target() -> None:
+    """PR #17 review regression: pasting the target as a competitor must not
+    cause two concurrent scans of the same site (both racing past the cache
+    miss). The duplicated competitor row should be dropped from the
+    competitors list entirely.
+    """
+    runner = AsyncMock(side_effect=lambda target, _probe: _fake_report(target.host))
+    target_summary, competitors = await run_compare(
+        "https://stripe.com",
+        # 1st competitor matches the target — should be filtered out.
+        # 2nd is a real different domain.
+        ["stripe.com", "square.com"],
+        runner,
+    )
+    assert target_summary.domain == "stripe.com"
+    assert [c.domain for c in competitors] == ["square.com"]
+    # Target + 1 unique competitor = 2 runner calls (NOT 3).
+    assert runner.await_count == 2
+
+
+@pytest.mark.asyncio
 async def test_run_compare_keeps_failed_rows_alongside_successes() -> None:
     async def runner(target: WebsiteTarget, _probe: bool) -> Report:
         if target.host == "broken.com":

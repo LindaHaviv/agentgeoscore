@@ -193,7 +193,14 @@ async def run_compare(
     """Run target + competitors in parallel, dedupe trivial duplicates."""
     # Drop empty entries up front and dedupe by normalized URL so the user
     # doesn't accidentally pay for "stripe.com" + "https://stripe.com" twice.
+    # Also seed `seen` with the target itself so a user pasting the target
+    # domain as a competitor doesn't trigger two concurrent scans of the same
+    # site (both would race past the cache check before either could write
+    # back). Bug from PR #17 review.
     seen: set[str] = set()
+    target_normalized = normalize_competitor_input(target_url)
+    if target_normalized is not None:
+        seen.add(target_normalized)
     cleaned_competitors: list[str] = []
     for raw in competitor_inputs:
         normalized = normalize_competitor_input(raw)
