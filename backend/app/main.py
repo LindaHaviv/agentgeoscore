@@ -28,6 +28,7 @@ from .scanners import (
     check_citability,
     check_content_clarity,
     check_discoverability,
+    check_js_rendering,
     check_structured_data,
     extract_jsonld,
 )
@@ -119,6 +120,10 @@ async def scan(req: ScanRequest) -> Report:
         content_checks = check_content_clarity(home_html) + check_citability(
             home_html, jsonld_blocks
         )
+        # JS-rendering / SPA detection — surfaced under Discoverability since
+        # the framing is "AI crawlers may not see your content," same family
+        # as sitemap / HTTPS.
+        js_render_checks = check_js_rendering(home_html)
 
         # Live probes in parallel
         probe_tasks: list = []
@@ -148,7 +153,10 @@ async def scan(req: ScanRequest) -> Report:
 
     categories = [
         build_category(CategoryId.AGENT_ACCESS, agent_access_checks or []),
-        build_category(CategoryId.DISCOVERABILITY, discoverability_checks or []),
+        build_category(
+            CategoryId.DISCOVERABILITY,
+            (discoverability_checks or []) + js_render_checks,
+        ),
         build_category(CategoryId.STRUCTURED_DATA, structured_data_checks),
         build_category(CategoryId.CONTENT_CLARITY, content_checks),
     ]

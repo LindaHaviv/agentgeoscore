@@ -136,7 +136,11 @@ def check_content_clarity(html: str) -> list[CheckResult]:
         status, score, detail = (
             CheckStatus.FAIL,
             0.1,
-            f"Only {word_count} words of visible text — likely a client-rendered SPA. AI agents can't read JS-only content.",
+            (
+                f"Only {word_count} words of visible text in the initial HTML. "
+                "Either the page is too thin to be useful, or the real content is "
+                "behind JS (see the dedicated 'Server-rendered HTML' check)."
+            ),
         )
     elif ratio < 0.05:
         status, score, detail = (
