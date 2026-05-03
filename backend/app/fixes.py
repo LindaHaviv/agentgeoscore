@@ -205,6 +205,33 @@ META_DESC_SNIPPET = (
     'that describes what visitors (and AI agents) will find here." />'
 )
 
+MULTIPAGE_DEPTH_SNIPPET = """<!-- Pick one or two content pages your homepage links to (blog index, /about,
+     /pricing, a flagship case study) and bring them up to the same standard
+     as the homepage. Below is a minimum on-page checklist for any content URL: -->
+
+<!-- 1. A single, descriptive <h1> + a meta description -->
+<title>How we cut onboarding time by 40% — Acme blog</title>
+<meta name="description" content="Concrete steps Acme took to reduce new-customer onboarding from 12 days to 7." />
+
+<!-- 2. A real dateModified, machine-readable -->
+<time datetime="2026-04-20" itemprop="dateModified">April 20, 2026</time>
+
+<!-- 3. JSON-LD describing the page (Article / AboutPage / Product / FAQPage) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How we cut onboarding time by 40%",
+  "datePublished": "2026-04-20",
+  "dateModified": "2026-04-20",
+  "author": { "@type": "Person", "name": "Jane Doe", "url": "https://example.com/author/jane-doe" }
+}
+</script>
+
+<!-- 4. Substantive body copy — aim for ~800-1500 words on the pages
+     AI engines are most likely to surface (about / pricing / flagship posts).
+     Princeton GEO 2024 found 1500-2500 words to be the cited-content sweet spot. -->"""
+
 JS_RENDERING_SNIPPET = """// Next.js — opt the route into static / server rendering
 // app/page.tsx
 export const dynamic = 'force-static';   // or 'force-dynamic' for SSR
@@ -261,6 +288,18 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "snippet": JS_RENDERING_SNIPPET,
         "snippet_language": "javascript",
         "docs_url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics",
+    },
+    "multipage_depth": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "medium",
+        "score_lift_fail": 5,
+        "score_lift_warn": 2,
+        "title_fail": "Bring your inner pages up to the same standard as the homepage",
+        "title_warn": "Make depth consistent across your top content pages",
+        "snippet": MULTIPAGE_DEPTH_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://developers.google.com/search/docs/appearance/structured-data/article",
     },
     # Agent Access ------------------------------------------------------------
     "robots_exists": {

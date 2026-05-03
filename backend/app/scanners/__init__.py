@@ -4,6 +4,7 @@ from .citability import check_citability
 from .content_clarity import check_content_clarity
 from .discoverability import check_discoverability
 from .js_rendering import check_js_rendering
+from .multipage import check_multipage_depth
 from .structured_data import check_structured_data, extract_jsonld
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     "check_content_clarity",
     "check_discoverability",
     "check_js_rendering",
+    "check_multipage_depth",
     "check_structured_data",
     "extract_jsonld",
 ]
