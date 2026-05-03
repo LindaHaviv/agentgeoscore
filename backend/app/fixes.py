@@ -423,7 +423,7 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "title_fail": "Fill in required properties on your JSON-LD blocks",
         "title_warn": "Add the recommended fields to your JSON-LD blocks",
         "snippet": JSONLD_VALIDITY_SNIPPET,
-        "snippet_language": "json",
+        "snippet_language": "javascript",
         "docs_url": "https://developers.google.com/search/docs/appearance/structured-data",
     },
     # Agent Access ------------------------------------------------------------
