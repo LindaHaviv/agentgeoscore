@@ -232,6 +232,38 @@ MULTIPAGE_DEPTH_SNIPPET = """<!-- Pick one or two content pages your homepage li
      AI engines are most likely to surface (about / pricing / flagship posts).
      Princeton GEO 2024 found 1500-2500 words to be the cited-content sweet spot. -->"""
 
+CONTENT_DEPTH_SNIPPET = """<!-- Princeton's GEO 2024 study found content in the 1500–2500-word band gets
+     cited disproportionately by AI engines. The shape that consistently lifts
+     citations: a focused intro that answers the question directly, then 4–8
+     question-shaped H2s with concrete sub-answers, and a recap. -->
+
+<article>
+  <h1>How to migrate from Stripe to Square (and when not to)</h1>
+  <p class="lede">
+    A 1900-word, decision-focused guide. Direct answer in the first paragraph,
+    then concrete steps and trade-offs.
+  </p>
+
+  <h2>Should you actually migrate?</h2>
+  <p>Direct answer in 1–3 sentences, then expand…</p>
+
+  <h2>What does the migration actually involve?</h2>
+  <p>Concrete steps with code/CLI examples…</p>
+
+  <h2>How long does it take?</h2>
+  <p>Real numbers from a real migration, not estimates…</p>
+
+  <h2>What breaks?</h2>
+  <p>Specific gotchas with the workaround for each…</p>
+
+  <h2>When should you stay?</h2>
+  <p>Honest about the cases where the migration isn't worth it…</p>
+</article>
+
+<!-- Aim for: 1500–2500 words total, at least 4 H2/H3 sub-headings, every
+     sub-heading phrased as a question your readers actually ask. Each H2
+     answer becomes an independently-citable surface for AI engines. -->"""
+
 JS_RENDERING_SNIPPET = """// Next.js — opt the route into static / server rendering
 // app/page.tsx
 export const dynamic = 'force-static';   // or 'force-dynamic' for SSR
@@ -300,6 +332,18 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "snippet": MULTIPAGE_DEPTH_SNIPPET,
         "snippet_language": "html",
         "docs_url": "https://developers.google.com/search/docs/appearance/structured-data/article",
+    },
+    "content_depth": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "medium",
+        "score_lift_fail": 4,
+        "score_lift_warn": 2,
+        "title_fail": "Grow your flagship content into the 1500\u20132500-word citation band",
+        "title_warn": "Tighten your flagship content toward the 1500\u20132500-word band",
+        "snippet": CONTENT_DEPTH_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://arxiv.org/abs/2311.09735",
     },
     # Agent Access ------------------------------------------------------------
     "robots_exists": {
