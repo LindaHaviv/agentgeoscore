@@ -168,16 +168,28 @@ async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
     for res in results[3:]:
         probe_checks.append(_unwrap_single(res, errors, "probe"))
 
+    # check_multipage_depth returns three rows; the internal-linking row is
+    # surfaced under Discoverability (it's a link-graph signal, not a content
+    # signal) while the depth + content_depth rows stay in Content Clarity.
+    multipage_for_clarity = [
+        c for c in (multipage_checks or []) if c.id != "internal_linking"
+    ]
+    multipage_for_discoverability = [
+        c for c in (multipage_checks or []) if c.id == "internal_linking"
+    ]
+
     categories = [
         build_category(CategoryId.AGENT_ACCESS, agent_access_checks or []),
         build_category(
             CategoryId.DISCOVERABILITY,
-            (discoverability_checks or []) + js_render_checks,
+            (discoverability_checks or [])
+            + js_render_checks
+            + multipage_for_discoverability,
         ),
         build_category(CategoryId.STRUCTURED_DATA, structured_data_checks),
         build_category(
             CategoryId.CONTENT_CLARITY,
-            content_checks + (multipage_checks or []),
+            content_checks + multipage_for_clarity,
         ),
     ]
     probe_checks_clean = [c for c in probe_checks if c is not None]

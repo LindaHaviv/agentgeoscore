@@ -351,6 +351,38 @@ export default async function Page() {
 // Last resort — proxy crawler UAs through a service like prerender.io."""
 
 
+INTERNAL_LINKING_SNIPPET = """<!-- Anchor text is a primary topic signal for AI crawlers. Replace generic
+     phrases with text that describes the destination page in 2–6 words.
+     The closer the anchor text matches the headline of the linked page,
+     the cleaner the link graph reads to GPTBot / ClaudeBot / Perplexity. -->
+
+<!-- Bad — tells the crawler nothing about where the link goes -->
+<a href="/blog/how-we-saved-100k-on-aws">Click here</a>
+<a href="/pricing">Read more</a>
+<a href="/about">https://example.com/about</a>
+<a href="/cases/acme"></a>
+
+<!-- Good — anchor text describes the target -->
+<a href="/blog/how-we-saved-100k-on-aws">How we cut our AWS bill by $100k</a>
+<a href="/pricing">View pricing for Pro and Enterprise plans</a>
+<a href="/about">About our team and mission</a>
+<a href="/cases/acme">Case study: Acme reduced support tickets 40%</a>
+
+<!-- Image-only links: give them an accessible name so the link graph
+     stays readable to crawlers that don't render images. -->
+<a href="/blog">
+  <img src="/icons/blog.svg" alt="Engineering blog">
+</a>
+<!-- or -->
+<a href="/blog" aria-label="Engineering blog">
+  <img src="/icons/blog.svg" alt="">
+</a>
+
+<!-- Make sure your top-nav links are real <a href> elements in the
+     initial HTML, not React/Vue onClick handlers. AI crawlers without
+     JS execution walk the link graph from server-rendered anchors only. -->"""
+
+
 FIX_LIBRARY: dict[str, FixTemplate] = {
     # Discoverability ---------------------------------------------------------
     "sitemap": {
@@ -425,6 +457,18 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "snippet": JSONLD_VALIDITY_SNIPPET,
         "snippet_language": "javascript",
         "docs_url": "https://developers.google.com/search/docs/appearance/structured-data",
+    },
+    "internal_linking": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 4,
+        "score_lift_warn": 2,
+        "title_fail": "Rewrite generic anchor text with descriptive labels",
+        "title_warn": "Tighten anchor-text quality on your internal links",
+        "snippet": INTERNAL_LINKING_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://developers.google.com/search/docs/crawling-indexing/links-crawlable",
     },
     # Agent Access ------------------------------------------------------------
     "robots_exists": {
