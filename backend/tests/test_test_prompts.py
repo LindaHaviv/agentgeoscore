@@ -127,6 +127,68 @@ def test_detect_does_not_misfire_when_a_path_hint_is_a_substring_of_an_unrelated
     assert cat.slug != "agency-consulting"
 
 
+def test_detect_live_entertainment_via_strong_keywords():
+    html = """<html><head><title>Sound Lab Studios</title></head><body>
+<h1>Live Music for Weddings &amp; Corporate Events</h1>
+<h2>Hire a band that fills the dance floor.</h2>
+<a href="/setlist">Setlist</a><a href="/book">Book</a><a href="/events">Events</a>
+</body></html>"""
+    cat = detect_category(html, [], "soundlabstudios.example")
+    assert cat.slug == "live-entertainment"
+
+
+def test_detect_wedding_services_via_strong_keywords():
+    html = """<html><head><title>Bloom &amp; Vow</title>
+<meta name="description" content="Boutique wedding planner serving NYC couples." />
+</head><body>
+<h1>Full-service wedding planning</h1>
+<h2>Wedding vendor sourcing, design, and day-of coordination.</h2>
+<a href="/weddings">Weddings</a><a href="/bridal">Bridal</a>
+</body></html>"""
+    cat = detect_category(html, [], "bloomandvow.example")
+    assert cat.slug == "wedding-services"
+
+
+def test_detect_fitness_via_schema_and_class_keywords():
+    html = """<html><head><title>Apex Fitness</title></head><body>
+<h1>Group classes &amp; personal training</h1>
+<a href="/classes">Classes</a><a href="/memberships">Memberships</a>
+<a href="/trainers">Trainers</a><a href="/schedule">Schedule</a>
+</body></html>"""
+    cat = detect_category(html, [{"@type": "ExerciseGym"}], "apex.example")
+    assert cat.slug == "fitness-wellness"
+
+
+def test_detect_home_services_via_schema_Plumber():
+    html = """<html><head><title>RapidFix</title></head><body>
+<h1>24/7 emergency service — licensed and insured</h1>
+<a href="/estimate">Free estimate</a><a href="/service-areas">Service areas</a>
+</body></html>"""
+    cat = detect_category(html, [{"@type": "Plumber"}], "rapidfix.example")
+    assert cat.slug == "home-services"
+
+
+def test_detect_legal_services_via_schema_LegalService():
+    html = """<html><head><title>Smith &amp; Associates</title></head><body>
+<h1>Free consultation — no fee unless we win</h1>
+<a href="/attorneys">Our Attorneys</a><a href="/practice-areas">Practice Areas</a>
+<a href="/case-results">Case Results</a>
+</body></html>"""
+    cat = detect_category(html, [{"@type": "LegalService"}], "smithlaw.example")
+    assert cat.slug == "legal-services"
+
+
+def test_detect_photography_via_strong_keywords_and_path():
+    html = """<html><head><title>Maya Lin Photography</title></head><body>
+<h1>Wedding photography &amp; portraits</h1>
+<h2>View portfolio</h2>
+<a href="/portfolio">Portfolio</a><a href="/galleries">Galleries</a>
+<a href="/sessions">Book a session</a>
+</body></html>"""
+    cat = detect_category(html, [], "mayalinphoto.example")
+    assert cat.slug == "photography-video"
+
+
 def test_detect_does_not_classify_furniture_store_as_design_software():
     """Regression: removing generic 'design'/'designer' keywords from
     design-creative so an interior-decor brand doesn't mis-trigger.
