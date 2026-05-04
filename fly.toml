@@ -1,43 +1,37 @@
-# Fly.io app configuration for AgentGEOScore backend.
+# fly.toml app configuration file generated for agentgeoscore-1ei53w on 2026-05-04T03:02:05Z
 #
-# The ``app`` value below is a placeholder. When Fly's GitHub-deploy flow
-# (https://fly.io/launch) provisions a fresh app, it will overwrite this
-# field with the chosen app name. If you are deploying via ``flyctl
-# deploy`` from this repository, set ``app`` to your target app name
-# before running.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "agentgeoscore"
-primary_region = "iad"
-kill_signal = "SIGINT"
-kill_timeout = "5s"
+app = 'agentgeoscore-1ei53w'
+primary_region = 'ams'
+kill_signal = 'SIGINT'
+kill_timeout = '5s'
 
 [build]
-  # Repo-root Dockerfile builds the backend image.
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  # Uvicorn / FastAPI bind to $PORT inside the container.
-  PORT = "8080"
+  PORT = '8080'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  # Auto-stop machines when idle to keep costs in the $5/mo minimum.
-  # Cold-start back from suspend is sub-second on Fly.
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
   [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
-    method = "GET"
-    path = "/api/healthz"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/api/healthz'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
-  cpu_kind = "shared"
+  size = 'shared-cpu-1x'
+  memory = '512mb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 256
