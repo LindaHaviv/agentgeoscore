@@ -213,3 +213,142 @@ def test_datemodified_handles_news_article_and_graph_wrapper():
 </script></head></html>"""
     ids = {r.id: r for r in check_structured_data(html)}
     assert ids["freshness_datemodified"].status.value == "pass"
+
+
+# ---- JSON-LD validator-conformance (gap #5) -------------------------------
+
+
+def _html_with_jsonld(*blocks: str) -> str:
+    scripts = "".join(
+        f'<script type="application/ld+json">{b}</script>' for b in blocks
+    )
+    return f"<html><head>{scripts}</head><body></body></html>"
+
+
+def _find_validity(html: str):
+    for r in check_structured_data(html):
+        if r.id == "jsonld_validity":
+            return r
+    return None
+
+
+def test_jsonld_validity_pass_for_complete_article():
+    block = """{
+      "@context":"https://schema.org","@type":"Article",
+      "headline":"Hello","author":{"@type":"Person","name":"Jane"},
+      "datePublished":"2026-04-20","dateModified":"2026-04-21",
+      "image":"https://ex.com/a.jpg","publisher":{"@type":"Organization","name":"Acme"}
+    }"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "pass"
+    assert r.evidence["validated"] == 1
+    assert r.evidence["broken_required"] == 0
+
+
+def test_jsonld_validity_fail_when_article_missing_headline():
+    block = """{
+      "@context":"https://schema.org","@type":"Article",
+      "author":{"@type":"Person","name":"Jane"},
+      "datePublished":"2026-04-20"
+    }"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "fail"
+    assert r.evidence["broken_required"] == 1
+    assert "headline" in r.detail
+
+
+def test_jsonld_validity_warn_when_only_recommended_missing():
+    # All required present, but missing recommended logo/sameAs.
+    block = """{"@context":"https://schema.org","@type":"Organization",
+               "name":"Acme","url":"https://example.com"}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "warn"
+    assert r.evidence["missing_recommended"] == 1
+    assert "logo" in r.detail or "sameAs" in r.detail
+
+
+def test_jsonld_validity_fail_product_missing_name():
+    block = """{"@context":"https://schema.org","@type":"Product",
+               "offers":{"@type":"Offer","price":"9","priceCurrency":"USD"}}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "fail"
+    assert "name" in r.detail
+
+
+def test_jsonld_validity_fail_faqpage_without_mainentity():
+    block = """{"@context":"https://schema.org","@type":"FAQPage"}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "fail"
+    assert "mainEntity" in r.detail
+
+
+def test_jsonld_validity_fail_faqpage_with_malformed_question():
+    """Question missing acceptedAnswer.text — structurally broken despite mainEntity."""
+    block = """{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+        {"@type":"Question","name":"Q?","acceptedAnswer":{"@type":"Answer"}}
+    ]}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "fail"
+    # Evidence must surface the specific problem, not just the top-level type.
+    block_entry = r.evidence["blocks"][0]
+    assert any("acceptedAnswer" in p for p in block_entry["missing_required"])
+
+
+def test_jsonld_validity_pass_faqpage_with_two_valid_questions():
+    block = """{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+        {"@type":"Question","name":"Q1?","acceptedAnswer":{"@type":"Answer","text":"A1"}},
+        {"@type":"Question","name":"Q2?","acceptedAnswer":{"@type":"Answer","text":"A2"}}
+    ]}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "pass"
+
+
+def test_jsonld_validity_skip_when_only_untyped_or_unknown_types():
+    # WebSite is a real schema.org type but not one we validate — should skip.
+    block = """{"@context":"https://schema.org","@type":"WebSite","name":"x","url":"https://x"}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    assert r.status.value == "skip"
+    assert r.evidence["validated"] == 0
+
+
+def test_jsonld_validity_not_emitted_when_no_jsonld_at_all():
+    """When the page has zero JSON-LD, jsonld_present owns the messaging;
+    the validity row must NOT be emitted (would double-report)."""
+    html = "<html><head></head><body>no jsonld</body></html>"
+    ids = {r.id for r in check_structured_data(html)}
+    assert "jsonld_validity" not in ids
+    assert "jsonld_present" in ids
+
+
+def test_jsonld_validity_walks_nested_blocks():
+    """A valid Article nested inside an @graph wrapper should be validated."""
+    block = """{"@context":"https://schema.org","@graph":[
+        {"@type":"Organization","name":"Acme","url":"https://ex.com","logo":"https://ex.com/l.png"},
+        {"@type":"Article","headline":"Hi","author":{"@type":"Person","name":"J"},
+         "datePublished":"2026-01-01","dateModified":"2026-01-02",
+         "image":"https://ex.com/i.jpg","publisher":{"@type":"Organization","name":"Acme"}}
+    ]}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    # Both blocks inside @graph should be counted.
+    assert r.evidence["validated"] >= 2
+
+
+def test_jsonld_validity_evidence_includes_block_label_when_available():
+    """The evidence should surface a human-identifiable label per block."""
+    block = """{"@context":"https://schema.org","@type":"Article",
+               "headline":"The long headline for this article",
+               "author":{"@type":"Person","name":"X"},
+               "datePublished":"2026-01-01"}"""
+    r = _find_validity(_html_with_jsonld(block))
+    assert r is not None
+    labels = [b.get("label") for b in r.evidence["blocks"]]
+    assert "The long headline for this article" in labels
