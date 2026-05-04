@@ -264,6 +264,75 @@ CONTENT_DEPTH_SNIPPET = """<!-- Princeton's GEO 2024 study found content in the 
      sub-heading phrased as a question your readers actually ask. Each H2
      answer becomes an independently-citable surface for AI engines. -->"""
 
+JSONLD_VALIDITY_SNIPPET = """// Minimum valid JSON-LD for the four types that matter most for AI citation.
+// Google Rich Results (and most AI crawlers that parse structured data) will
+// silently drop a block that's missing any REQUIRED property — your schema
+// effectively doesn't exist for ranking purposes.
+
+// 1. Article / BlogPosting / NewsArticle — required: headline, author, datePublished
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How we cut onboarding time by 40%",
+  "author": { "@type": "Person", "name": "Jane Doe", "url": "https://example.com/author/jane-doe" },
+  "datePublished": "2026-04-20",
+  "dateModified": "2026-04-22",
+  "image": "https://example.com/og/onboarding.jpg",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Acme",
+    "logo": { "@type": "ImageObject", "url": "https://example.com/logo.png" }
+  }
+}
+
+// 2. Product — required: name (plus offers/review/aggregateRating for rich results)
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Acme Pro",
+  "image": "https://example.com/pro.jpg",
+  "description": "The flagship plan with everything included.",
+  "brand": { "@type": "Brand", "name": "Acme" },
+  "offers": {
+    "@type": "Offer",
+    "price": "99.00",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  }
+}
+
+// 3. FAQPage — required: mainEntity as non-empty list of Questions,
+//    each with name + acceptedAnswer.text
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How long does onboarding take?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Most teams finish in 3–5 days." }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you support SSO?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes — SAML and OIDC on every plan." }
+    }
+  ]
+}
+
+// 4. Organization — required: name, url (plus logo for Google knowledge panels)
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Acme",
+  "url": "https://example.com",
+  "logo": "https://example.com/logo.png",
+  "sameAs": [
+    "https://www.linkedin.com/company/acme",
+    "https://twitter.com/acme"
+  ]
+}"""
+
 JS_RENDERING_SNIPPET = """// Next.js — opt the route into static / server rendering
 // app/page.tsx
 export const dynamic = 'force-static';   // or 'force-dynamic' for SSR
@@ -344,6 +413,18 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "snippet": CONTENT_DEPTH_SNIPPET,
         "snippet_language": "html",
         "docs_url": "https://arxiv.org/abs/2311.09735",
+    },
+    "jsonld_validity": {
+        "severity_on_fail": "critical",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 6,
+        "score_lift_warn": 2,
+        "title_fail": "Fill in required properties on your JSON-LD blocks",
+        "title_warn": "Add the recommended fields to your JSON-LD blocks",
+        "snippet": JSONLD_VALIDITY_SNIPPET,
+        "snippet_language": "javascript",
+        "docs_url": "https://developers.google.com/search/docs/appearance/structured-data",
     },
     # Agent Access ------------------------------------------------------------
     "robots_exists": {
