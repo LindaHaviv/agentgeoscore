@@ -351,6 +351,30 @@ export default async function Page() {
 // Last resort — proxy crawler UAs through a service like prerender.io."""
 
 
+HREFLANG_SNIPPET = """<!-- Declare every language version of this page in <head>. Each version
+     should declare the SAME set of alternates pointing back to all the
+     others (reciprocity is enforced by Google). Always include x-default
+     as the geo-fallback for users whose locale doesn't match any
+     declared variant.
+
+     Codes follow BCP 47: lang ("en"), or lang-region ("en-GB"), or
+     lang-script-region ("zh-Hans-CN"). Region codes are ISO 3166-1
+     alpha-2 (uppercase) — they are NOT country names. -->
+
+<link rel="alternate" hreflang="en"        href="https://example.com/" />
+<link rel="alternate" hreflang="en-GB"     href="https://example.com/uk/" />
+<link rel="alternate" hreflang="fr"        href="https://example.com/fr/" />
+<link rel="alternate" hreflang="fr-CA"     href="https://example.com/ca/fr/" />
+<link rel="alternate" hreflang="de"        href="https://example.com/de/" />
+<link rel="alternate" hreflang="es-419"    href="https://example.com/latam/" />
+<link rel="alternate" hreflang="zh-Hans"   href="https://example.com/cn/" />
+<link rel="alternate" hreflang="x-default" href="https://example.com/" />
+
+<!-- Verify with:
+       https://search.google.com/test/rich-results?url=...
+     or Bing Webmaster Tools' International Targeting report. -->"""
+
+
 CORE_WEB_VITALS_SNIPPET = """// Core Web Vitals are part of Google's ranking signal — and Google AI
 // Overviews inherits from that index. Below is the Lighthouse-recommended
 // stack of fixes for the three CWV metrics, ordered by typical impact.
@@ -514,6 +538,18 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "snippet": CORE_WEB_VITALS_SNIPPET,
         "snippet_language": "javascript",
         "docs_url": "https://web.dev/articles/vitals",
+    },
+    "hreflang": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "low",
+        "score_lift_fail": 3,
+        "score_lift_warn": 1,
+        "title_fail": "Declare hreflang alternates for every language version",
+        "title_warn": "Tighten your hreflang declarations",
+        "snippet": HREFLANG_SNIPPET,
+        "snippet_language": "html",
+        "docs_url": "https://developers.google.com/search/docs/specialized/international/localized-versions",
     },
     # Agent Access ------------------------------------------------------------
     "robots_exists": {
