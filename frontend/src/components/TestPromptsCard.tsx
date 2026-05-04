@@ -65,8 +65,8 @@ export function TestPromptsCard({ bundle: initialBundle, domain }: Props) {
         </p>
       </div>
 
-      <div className="bg-paper-soft/60 border border-rule p-4 mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="text-sm">
+      <div className="bg-paper-soft/60 border border-rule p-4 mb-5 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+        <div className="text-sm flex-1 min-w-0">
           <div className="text-ink-700">
             We think this is <strong className="text-ink-900">{bundle.detected_category.label}</strong>{' '}
             <span className={`font-mono text-xs ${confColor}`}>· {confLabel}</span>
@@ -80,26 +80,34 @@ export function TestPromptsCard({ bundle: initialBundle, domain }: Props) {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <label
             htmlFor="category-override"
             className="text-xs text-ink-500 font-mono whitespace-nowrap"
           >
             Not right?
           </label>
-          <select
-            id="category-override"
-            value={bundle.detected_category.slug}
-            onChange={(e) => handleCategoryChange(e.target.value)}
-            disabled={loading}
-            className="text-sm border border-ink-900 px-2 py-1 bg-paper text-ink-900 font-display tracking-tightish disabled:opacity-50"
-          >
-            {bundle.all_categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              id="category-override"
+              value={bundle.detected_category.slug}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              disabled={loading}
+              className="appearance-none text-sm border border-ink-900 pl-3 pr-7 py-1 bg-paper text-ink-900 font-display tracking-tightish cursor-pointer hover:bg-paper-tint focus:outline-none focus:ring-2 focus:ring-terra/30 focus:ring-offset-1 focus:ring-offset-paper-soft disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {bundle.all_categories.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink-700 text-[10px] leading-none"
+            >
+              ▾
+            </span>
+          </div>
         </div>
       </div>
 
