@@ -32,9 +32,19 @@ class Fetcher:
     """Async HTTP client with per-URL memoization for a single scan."""
 
     def __init__(self, timeout: httpx.Timeout | None = None):
+        # ``Accept-Language`` is set explicitly so geolocation-aware sites
+        # (Stripe, Airbnb, large e-commerce) don't redirect us to a localized
+        # subpath like ``/nl/`` based on the egress IP of our host. When that
+        # happens, sampled headings/nav arrive in another language and leak
+        # into category detection + topic extraction (we previously got
+        # phrases like "lees het verhaal" surfaced as topics for stripe.com
+        # because the Fly app egresses from Amsterdam).
         self._client = httpx.AsyncClient(
             timeout=timeout or DEFAULT_TIMEOUT,
-            headers={"User-Agent": USER_AGENT},
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept-Language": "en-US,en;q=0.9",
+            },
             follow_redirects=True,
             http2=False,
         )
