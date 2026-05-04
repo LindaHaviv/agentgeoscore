@@ -36,6 +36,7 @@ from .scanners import (
     check_content_clarity,
     check_core_web_vitals,
     check_discoverability,
+    check_hreflang,
     check_js_rendering,
     check_multipage_depth,
     check_structured_data,
@@ -135,6 +136,11 @@ async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
         # as sitemap / HTTPS.
         js_render_checks = check_js_rendering(home_html)
 
+        # hreflang / international-SEO. Surfaced under Discoverability since
+        # the failure mode is "wrong locale of your site shows up in
+        # AI-generated answers." Skips cleanly for monolingual sites.
+        hreflang_check = check_hreflang(home_html)
+
         # Multi-page sample — fetches up to 2 internal content URLs in
         # parallel and summarizes their depth. Surfaced under Content Clarity
         # since the framing is "is your content actually readable beyond the
@@ -191,6 +197,7 @@ async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
     discoverability_extras = list(js_render_checks) + multipage_for_discoverability
     if cwv_check is not None:
         discoverability_extras.append(cwv_check)
+    discoverability_extras.append(hreflang_check)
 
     categories = [
         build_category(CategoryId.AGENT_ACCESS, agent_access_checks or []),
