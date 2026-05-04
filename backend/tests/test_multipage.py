@@ -9,6 +9,10 @@ import pytest
 from app.fetcher import FetchResult
 from app.models import CheckStatus
 from app.scanners.multipage import (
+    _AnchorInfo,
+    _build_internal_linking_check,
+    _classify_anchor_quality,
+    _extract_anchors,
     _has_recent_date_signal,
     _is_sampleable_href,
     _PageStats,
@@ -298,14 +302,15 @@ async def test_check_multipage_depth_pass_when_pages_are_substantive() -> None:
     }
     fetcher = _mock_fetcher_returning(pages)
     checks = await check_multipage_depth(_target(), fetcher, home)
-    [check, content_depth] = checks
+    [check, content_depth, internal_linking] = checks
     assert check.id == "multipage_depth"
     assert check.status == CheckStatus.PASS
     assert check.evidence is not None
     assert len(check.evidence["sampled"]) == 2
     assert all(s["word_count"] >= 500 for s in check.evidence["sampled"])
-    # content_depth row is always emitted alongside the multipage row.
+    # content_depth + internal_linking rows are always emitted alongside.
     assert content_depth.id == "content_depth"
+    assert internal_linking.id == "internal_linking"
 
 
 @pytest.mark.asyncio
@@ -324,7 +329,7 @@ async def test_check_multipage_depth_warn_when_pages_thin() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [check, _content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [check, _content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert check.status == CheckStatus.WARN
 
 
@@ -332,7 +337,7 @@ async def test_check_multipage_depth_warn_when_pages_thin() -> None:
 async def test_check_multipage_depth_fail_all_fetches_failed() -> None:
     home = _homepage_with_links("/blog", "/about")
     fetcher = _mock_fetcher_returning({})  # every URL → 404
-    [check, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [check, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert check.status == CheckStatus.FAIL
     # No successful sample → content_depth must skip with an explanatory detail.
     assert content_depth.status == CheckStatus.SKIP
@@ -342,7 +347,7 @@ async def test_check_multipage_depth_fail_all_fetches_failed() -> None:
 async def test_check_multipage_depth_skip_no_internal_links() -> None:
     home = '<html><body><div id="root"></div></body></html>'
     fetcher = _mock_fetcher_returning({})
-    [check, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [check, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert check.status == CheckStatus.SKIP
     assert "single-page app" in check.detail.lower() or "no internal" in check.detail.lower()
     assert content_depth.status == CheckStatus.SKIP
@@ -351,7 +356,7 @@ async def test_check_multipage_depth_skip_no_internal_links() -> None:
 @pytest.mark.asyncio
 async def test_check_multipage_depth_skip_empty_homepage() -> None:
     fetcher = _mock_fetcher_returning({})
-    [check, content_depth] = await check_multipage_depth(_target(), fetcher, "")
+    [check, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, "")
     assert check.status == CheckStatus.SKIP
     assert content_depth.status == CheckStatus.SKIP
 
@@ -380,7 +385,7 @@ async def test_pass_detail_does_not_overclaim_per_page_signals() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [check, _content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [check, _content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     # Confirm the underlying threshold still triggers PASS so this test is
     # exercising the overclaim path, not skipping it.
     assert check.status == CheckStatus.PASS
@@ -432,7 +437,7 @@ async def test_content_depth_pass_in_sweet_spot() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.id == "content_depth"
     assert content_depth.status == CheckStatus.PASS
     assert content_depth.score == pytest.approx(1.0)
@@ -454,7 +459,7 @@ async def test_content_depth_fail_when_thin() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.status == CheckStatus.FAIL
     assert "Princeton" in content_depth.detail
     assert "1500" in content_depth.detail
@@ -472,7 +477,7 @@ async def test_content_depth_warn_when_below_sweet_spot() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.status == CheckStatus.WARN
     assert "sweet spot" in content_depth.detail
 
@@ -489,7 +494,7 @@ async def test_content_depth_warn_on_wall_of_text() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.status == CheckStatus.WARN
     assert "wall-of-text" in content_depth.detail
 
@@ -506,7 +511,7 @@ async def test_content_depth_pass_on_long_but_structured() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.status == CheckStatus.PASS
     assert "long-form" in content_depth.detail
 
@@ -529,7 +534,7 @@ async def test_content_depth_picks_deepest_not_first_page() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.evidence is not None
     assert content_depth.evidence["deepest_url"].endswith("/blog")
     assert content_depth.status == CheckStatus.PASS
@@ -549,7 +554,7 @@ async def test_content_depth_warn_above_sweet_spot_without_subheadings() -> None
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.status == CheckStatus.WARN
     # Must NOT contain the contradictory "well-structured with 0 sub-heading(s)" wording.
     assert "well-structured" not in content_depth.detail
@@ -570,7 +575,244 @@ async def test_content_depth_pass_above_sweet_spot_with_subheadings() -> None:
         ),
     }
     fetcher = _mock_fetcher_returning(pages)
-    [_multipage, content_depth] = await check_multipage_depth(_target(), fetcher, home)
+    [_multipage, content_depth, _internal] = await check_multipage_depth(_target(), fetcher, home)
     assert content_depth.status == CheckStatus.PASS
     assert content_depth.score == pytest.approx(0.85)
     assert "well-structured" in content_depth.detail
+
+
+# ---- internal_linking signal ---------------------------------------------
+
+
+def _homepage_with_anchors(anchors_html: str) -> str:
+    """Wrap raw <a> markup in a minimal homepage. Useful when each test
+    needs to control anchor text and attributes individually."""
+    return (
+        "<!doctype html><html><body>"
+        f"<header><nav>{anchors_html}</nav></header>"
+        "<main><p>Hello</p></main>"
+        "</body></html>"
+    )
+
+
+def test_extract_anchors_skips_fragments_and_non_http() -> None:
+    html = _homepage_with_anchors(
+        '<a href="/blog">Blog</a>'
+        '<a href="#section">Section</a>'
+        '<a href="mailto:hi@example.com">Email</a>'
+        '<a href="javascript:void(0)">JS</a>'
+        '<a href="https://other.com/x">External</a>'
+    )
+    target = _target()
+    anchors = _extract_anchors(html, target.host, target.url)
+    # /blog (internal) + https://other.com/x (external). The fragment, mailto,
+    # and javascript: anchors are dropped before classification.
+    assert len(anchors) == 2
+    assert any(a.is_internal and a.href.endswith("/blog") for a in anchors)
+    assert any(not a.is_internal and "other.com" in a.href for a in anchors)
+
+
+def test_extract_anchors_picks_up_aria_label_as_accessible_name() -> None:
+    html = _homepage_with_anchors(
+        '<a href="/blog" aria-label="Engineering blog">'
+        '<svg></svg></a>'
+        '<a href="/about"></a>'  # truly anonymous — no text, no aria, no img alt
+    )
+    target = _target()
+    anchors = _extract_anchors(html, target.host, target.url)
+    by_href = {a.href.rsplit("/", 1)[-1]: a for a in anchors}
+    assert by_href["blog"].has_accessible_name is True
+    assert by_href["about"].has_accessible_name is False
+
+
+def test_extract_anchors_picks_up_image_alt_as_accessible_name() -> None:
+    html = _homepage_with_anchors(
+        '<a href="/blog"><img src="/icon.svg" alt="Engineering blog"></a>'
+    )
+    target = _target()
+    anchors = _extract_anchors(html, target.host, target.url)
+    assert len(anchors) == 1
+    assert anchors[0].text == ""
+    assert anchors[0].has_accessible_name is True
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("How we cut our AWS bill by $100k", "good"),
+        ("View pricing for Pro and Enterprise plans", "good"),
+        ("click here", "bad"),
+        ("Click Here", "bad"),
+        ("read more", "bad"),
+        ("learn more", "bad"),
+        ("more", "bad"),
+        ("here", "bad"),
+        ("→", "bad"),
+        ("https://example.com/blog/post-1", "bad"),
+        ("www.example.com/about", "bad"),
+    ],
+)
+def test_classify_anchor_quality_text_buckets(text: str, expected: str) -> None:
+    anchor = _AnchorInfo(
+        href="https://example.com/x",
+        text=text,
+        is_internal=True,
+        has_accessible_name=bool(text),
+    )
+    assert _classify_anchor_quality(anchor) == expected
+
+
+def test_classify_anchor_quality_empty_with_accessible_name_is_empty_named() -> None:
+    """Image-only / aria-labeled anchors don't count as ``bad`` — they have
+    an accessible name a crawler can read."""
+    anchor = _AnchorInfo(
+        href="https://example.com/x",
+        text="",
+        is_internal=True,
+        has_accessible_name=True,
+    )
+    assert _classify_anchor_quality(anchor) == "empty_named"
+
+
+def test_classify_anchor_quality_empty_without_name_is_bad() -> None:
+    anchor = _AnchorInfo(
+        href="https://example.com/x",
+        text="",
+        is_internal=True,
+        has_accessible_name=False,
+    )
+    assert _classify_anchor_quality(anchor) == "bad"
+
+
+def test_internal_linking_pass_when_anchors_are_descriptive() -> None:
+    home = _homepage_with_anchors(
+        '<a href="/blog/aws-savings">How we cut our AWS bill by $100k</a>'
+        '<a href="/pricing">View pricing for Pro and Enterprise plans</a>'
+        '<a href="/about">About our team and mission</a>'
+        '<a href="/cases/acme">Case study: Acme reduced support tickets 40%</a>'
+        '<a href="/docs">Engineering documentation</a>'
+    )
+    check = _build_internal_linking_check(home, _target(), [])
+    assert check.id == "internal_linking"
+    assert check.status == CheckStatus.PASS
+    assert check.score == pytest.approx(1.0)
+    assert check.evidence is not None
+    assert check.evidence["bad"] == 0
+    assert check.evidence["internal_anchors_total"] == 5
+
+
+def test_internal_linking_warn_at_mid_bad_ratio() -> None:
+    """30 % bad triggers WARN (above OK threshold 0.25, below WARN 0.50)."""
+    home = _homepage_with_anchors(
+        '<a href="/a">Engineering blog</a>'
+        '<a href="/b">Pricing for teams</a>'
+        '<a href="/c">About our mission</a>'
+        '<a href="/d">Customer case studies</a>'
+        '<a href="/e">Documentation hub</a>'
+        '<a href="/f">Security overview</a>'
+        '<a href="/g">click here</a>'
+        '<a href="/h">read more</a>'
+        '<a href="/i">learn more</a>'
+        '<a href="/j">https://example.com/blog</a>'
+    )
+    check = _build_internal_linking_check(home, _target(), [])
+    assert check.status == CheckStatus.WARN
+    assert check.evidence is not None
+    assert check.evidence["internal_anchors_total"] == 10
+    assert check.evidence["bad"] == 4
+
+
+def test_internal_linking_fail_when_majority_anchors_are_generic() -> None:
+    home = _homepage_with_anchors(
+        '<a href="/a">click here</a>'
+        '<a href="/b">read more</a>'
+        '<a href="/c">learn more</a>'
+        '<a href="/d">more</a>'
+        '<a href="/e">https://example.com/x</a>'
+        '<a href="/f">Engineering blog</a>'
+    )
+    check = _build_internal_linking_check(home, _target(), [])
+    assert check.status == CheckStatus.FAIL
+    assert check.score == pytest.approx(0.25)
+    assert check.evidence is not None
+    assert check.evidence["bad"] == 5
+    # Detail should name a concrete example with the bad text.
+    assert "click here" in check.detail.lower()
+
+
+def test_internal_linking_fail_when_homepage_has_zero_internal_links() -> None:
+    """Pure CSR shell or external-only homepage — flags structural failure."""
+    home = _homepage_with_anchors(
+        '<a href="https://twitter.com/x">Twitter</a>'
+        '<a href="https://github.com/x">GitHub</a>'
+    )
+    check = _build_internal_linking_check(home, _target(), [])
+    assert check.status == CheckStatus.FAIL
+    assert check.score == pytest.approx(0.1)
+    assert "zero internal links" in check.detail.lower()
+
+
+def test_internal_linking_skip_when_too_few_internal_anchors_to_score() -> None:
+    home = _homepage_with_anchors(
+        '<a href="/blog">Blog</a>'
+        '<a href="/about">About</a>'
+    )
+    check = _build_internal_linking_check(home, _target(), [])
+    # Only 2 internal anchors — below _LINK_MIN_INTERNAL_ANCHORS=4.
+    assert check.status == CheckStatus.SKIP
+
+
+def test_internal_linking_combines_homepage_and_sampled_pages() -> None:
+    """Anchors from sampled pages should add to the pool, so a thin
+    homepage with rich sampled-page anchors can still PASS."""
+    home = _homepage_with_anchors(
+        '<a href="/blog">Engineering blog</a>'
+        '<a href="/about">About our team</a>'
+    )
+    sampled_html = _homepage_with_anchors(
+        '<a href="/blog/post-1">How we cut latency in half</a>'
+        '<a href="/blog/post-2">Postmortem: the great cache miss of 2024</a>'
+        '<a href="/pricing">View pricing</a>'
+        '<a href="/docs">Read the engineering documentation</a>'
+    )
+    sampled = _PageStats(
+        url="https://example.com/blog",
+        fetched=True,
+        word_count=600,
+        html=sampled_html,
+    )
+    check = _build_internal_linking_check(home, _target(), [sampled])
+    assert check.status == CheckStatus.PASS
+    assert check.evidence is not None
+    assert check.evidence["internal_anchors_total"] == 6
+
+
+def test_internal_linking_orphan_note_when_sampled_page_has_no_inbound() -> None:
+    """A sampled URL that nothing links to should be reported as an orphan
+    in the detail (informational; not gating)."""
+    home = _homepage_with_anchors(
+        '<a href="/blog">Engineering blog</a>'
+        '<a href="/about">About our team</a>'
+        '<a href="/pricing">View pricing</a>'
+        '<a href="/docs">Read the engineering documentation</a>'
+    )
+    # /orphan is fetched + sampled, but nothing links to it.
+    sampled_html = _homepage_with_anchors(
+        '<a href="/blog">Back to blog</a>'
+    )
+    sampled = _PageStats(
+        url="https://example.com/orphan",
+        fetched=True,
+        word_count=600,
+        html=sampled_html,
+    )
+    check = _build_internal_linking_check(home, _target(), [sampled])
+    assert check.evidence is not None
+    assert "/orphan" in check.evidence["orphan_urls_in_sample"]
+    assert "orphan" in check.detail.lower()
+
+
+def test_internal_linking_skip_when_no_html_available() -> None:
+    check = _build_internal_linking_check("", _target(), [])
+    assert check.status == CheckStatus.SKIP
+    assert check.evidence is None

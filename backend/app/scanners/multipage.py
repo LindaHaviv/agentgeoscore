@@ -106,6 +106,58 @@ _DEPTH_MIN_SUBHEADS = 3     # >_DEPTH_LONG with fewer subheads = wall-of-text WA
 # friendly "~N min read" hint in the detail string.
 _READING_WPM = 230
 
+# Phrases that count as low-value anchor text. Stored lowercased and matched
+# against the anchor's stripped text content. AI engines and traditional
+# crawlers both use anchor text as a topic signal; a link whose visible text
+# is "click here" tells the crawler nothing about the destination, so a high
+# proportion of these on a site materially weakens the link graph.
+#
+# Sources:
+# - Google Search Central — "Use descriptive link text" (Core principles, Jan 2024)
+# - W3C WCAG 2.2 Success Criterion 2.4.4 (Link Purpose) — same guidance from
+#   an accessibility angle: link text alone should make purpose clear.
+# - Princeton GEO 2024 (arXiv:2311.09735) — citation-eligibility correlated
+#   with structured navigation and descriptive labels.
+_BAD_ANCHOR_PHRASES: frozenset[str] = frozenset(
+    {
+        "click here",
+        "click",
+        "here",
+        "this",
+        "this article",
+        "this post",
+        "this page",
+        "this link",
+        "read more",
+        "learn more",
+        "more",
+        "details",
+        "see details",
+        "view",
+        "view more",
+        "see more",
+        "go",
+        "go here",
+        "link",
+        "tap here",
+        "continue",
+        "continue reading",
+        "...",
+        "…",
+        "->",
+        "→",
+    }
+)
+# Internal link quality thresholds. ``bad_ratio`` is the fraction of internal
+# anchors whose text is empty (without an accessible name), a bare URL, or one
+# of the generic phrases above.
+_LINK_BAD_RATIO_PASS = 0.10   # under this is essentially clean
+_LINK_BAD_RATIO_OK = 0.25     # under this is acceptable, mention room to improve
+_LINK_BAD_RATIO_WARN = 0.50   # under this we WARN; above we FAIL
+# Below this many total internal anchors across all sampled HTML, the signal
+# is too noisy to score — we SKIP rather than overclaim on tiny samples.
+_LINK_MIN_INTERNAL_ANCHORS = 4
+
 
 @dataclass
 class _PageStats:
@@ -121,6 +173,7 @@ class _PageStats:
     outbound_citations: int = 0
     subheading_count: int = 0  # h2 + h3 — used by the content_depth check
     detected_topic: str = ""  # which priority tier matched
+    html: str = ""  # full HTML — kept so the internal-linking check can re-parse anchors without an extra fetch
 
     @property
     def per_page_score(self) -> float:
@@ -360,6 +413,7 @@ async def _fetch_and_summarize(
     stats.has_recent_date = has_date
     stats.outbound_citations = citations
     stats.subheading_count = subheads
+    stats.html = result.text or ""
     return stats
 
 
@@ -639,14 +693,339 @@ def _build_content_depth_check(stats_list: list[_PageStats]) -> CheckResult:
     )
 
 
+@dataclass
+class _AnchorInfo:
+    """One anchor as observed on a fetched page.
+
+    ``href`` is the canonical absolute same-host URL when ``is_internal`` is
+    True; for external links we still record the raw href so external-vs-
+    internal balance can be reported but we don't attempt to canonicalize
+    every cross-origin URL.
+    """
+
+    href: str
+    text: str
+    is_internal: bool
+    has_accessible_name: bool  # text non-empty OR aria-label/title set
+
+
+def _is_bare_url_text(text: str) -> bool:
+    """Anchor text that's literally a URL is a low-quality signal.
+
+    AI engines and search crawlers both extract topic words from anchor
+    text — a link whose visible text is "https://example.com/blog/post-1"
+    contributes nothing. Strict prefix match avoids false positives on
+    links that happen to mention a URL within longer descriptive text.
+    """
+    if not text:
+        return False
+    t = text.strip().lower()
+    return t.startswith(("http://", "https://", "www."))
+
+
+def _normalize_anchor_text(text: str) -> str:
+    """Collapse whitespace and lowercase for ``_BAD_ANCHOR_PHRASES`` lookup."""
+    return " ".join(text.split()).lower()
+
+
+def _extract_anchors(html: str, base_host: str, base_url: str) -> list[_AnchorInfo]:
+    """Walk ``<a>`` elements and yield one ``_AnchorInfo`` per anchor.
+
+    Anchors with no href, fragment-only hrefs, or non-http(s) schemes are
+    skipped — they aren't part of the link graph an AI crawler walks.
+    """
+    if not html:
+        return []
+    anchors: list[_AnchorInfo] = []
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.find_all("a"):
+        raw_href = tag.get("href") or ""
+        href = raw_href.strip()
+        if not href or href.startswith("#"):
+            continue
+        lowered = href.lower()
+        if lowered.startswith(_SKIP_SCHEMES):
+            continue
+        try:
+            absolute = urljoin(base_url, href)
+            absolute, _ = urldefrag(absolute)
+            parsed = urlparse(absolute)
+        except ValueError:
+            continue
+        if parsed.scheme not in {"http", "https"}:
+            continue
+        is_internal = parsed.hostname == base_host
+        text = tag.get_text(" ", strip=True)
+        # Accessible-name fallback: an empty anchor wrapping an <img alt="..">
+        # or carrying aria-label/title is not "anonymous" to a crawler — Google
+        # and AI engines both honour these. Treat them as having a name.
+        has_name = bool(text)
+        if not has_name:
+            for attr in ("aria-label", "title"):
+                if tag.get(attr):
+                    has_name = True
+                    break
+        if not has_name:
+            for img in tag.find_all("img"):
+                alt = img.get("alt")
+                if alt and alt.strip():
+                    has_name = True
+                    break
+        anchors.append(
+            _AnchorInfo(
+                href=absolute,
+                text=text,
+                is_internal=is_internal,
+                has_accessible_name=has_name,
+            )
+        )
+    return anchors
+
+
+def _classify_anchor_quality(anchor: _AnchorInfo) -> str:
+    """Bucket an anchor as ``"good"`` | ``"bad"`` | ``"empty_named"``.
+
+    ``empty_named`` is a no-text anchor that still has an accessible name via
+    aria-label / image alt — these don't drag the score down (a crawler can
+    read the alt text) but they're not actively descriptive either, so we
+    track them separately for transparency in evidence.
+    """
+    text = anchor.text
+    normalized = _normalize_anchor_text(text)
+    if not text and anchor.has_accessible_name:
+        return "empty_named"
+    if not text and not anchor.has_accessible_name:
+        return "bad"
+    if normalized in _BAD_ANCHOR_PHRASES:
+        return "bad"
+    if _is_bare_url_text(text):
+        return "bad"
+    return "good"
+
+
+def _internal_linking_skip(detail: str) -> CheckResult:
+    """SKIP-status placeholder for the internal_linking row.
+
+    Used when there's nothing to score (no homepage, no internal anchors at
+    all, every sampled page failed). We still emit the row so users see why
+    the signal is missing rather than wondering whether it ran at all.
+    """
+    return CheckResult(
+        id="internal_linking",
+        label="Internal link quality",
+        status=CheckStatus.SKIP,
+        score=0.0,
+        weight=1.0,
+        detail=detail,
+        evidence=None,
+    )
+
+
+def _build_internal_linking_check(
+    home_html: str, target: WebsiteTarget, stats_list: list[_PageStats]
+) -> CheckResult:
+    """Score anchor-text quality + link graph health across sampled pages.
+
+    Combines:
+    - Homepage anchors (always present)
+    - Anchors from each successfully-fetched sampled page
+
+    Computes:
+    - ``bad_ratio`` — fraction of internal anchors with empty/generic/bare-URL
+      text. This is the score driver; AI engines use anchor text to discover
+      topic relevance and bad ratios degrade citation eligibility.
+    - ``orphan_urls`` — sampled URLs that no other scanned page links to.
+      Reported informationally; with only ``_SAMPLE_LIMIT`` sampled pages we
+      can't reliably distinguish "true orphan" from "we just didn't sample
+      the page that links here," so this is evidence-only, not gating.
+    - ``home_internal_link_count`` — flagged when 0 (homepage with zero
+      internal links is broken — usually a JS-rendered nav we can't read).
+    """
+    home_anchors = _extract_anchors(home_html, target.host, target.url)
+    successful = [s for s in stats_list if s.fetched and not s.error]
+
+    sampled_anchor_lists: list[tuple[str, list[_AnchorInfo]]] = []
+    for s in successful:
+        sampled_anchor_lists.append(
+            (s.url, _extract_anchors(s.html, target.host, s.url))
+        )
+
+    all_internal: list[_AnchorInfo] = [a for a in home_anchors if a.is_internal]
+    for _url, anchors in sampled_anchor_lists:
+        all_internal.extend(a for a in anchors if a.is_internal)
+
+    home_internal_count = sum(1 for a in home_anchors if a.is_internal)
+
+    if not home_anchors and not successful:
+        return _internal_linking_skip(
+            "No homepage HTML and no sampled pages were reachable, so we can't "
+            "evaluate internal link quality. Once the multi-page sample row "
+            "above produces at least one fetched page we'll score anchor-text "
+            "quality here."
+        )
+
+    if home_internal_count == 0:
+        return CheckResult(
+            id="internal_linking",
+            label="Internal link quality",
+            status=CheckStatus.FAIL,
+            score=0.1,
+            weight=1.0,
+            detail=(
+                "Homepage exposes zero internal links in raw HTML. AI crawlers "
+                "without JS execution (GPTBot, ClaudeBot in fetch mode, "
+                "PerplexityBot) walk the link graph from anchors in the served "
+                "HTML — with none, they can't reach any other page on the site. "
+                "Make sure your top-nav links are real <a href> elements in the "
+                "initial response, not React onClick handlers or buttons."
+            ),
+            evidence={
+                "home_internal_anchors": 0,
+                "home_total_anchors": len(home_anchors),
+            },
+        )
+
+    if len(all_internal) < _LINK_MIN_INTERNAL_ANCHORS:
+        return _internal_linking_skip(
+            f"Only {len(all_internal)} internal anchor(s) across the homepage "
+            f"and sampled pages — too few to score quality reliably. Either "
+            f"the site is genuinely tiny, or its navigation is rendered "
+            f"client-side after page load (which AI crawlers without JS "
+            f"execution would also miss)."
+        )
+
+    # Quality classification.
+    quality_counts: dict[str, int] = {"good": 0, "bad": 0, "empty_named": 0}
+    bad_examples: list[dict[str, str]] = []
+    for anchor in all_internal:
+        bucket = _classify_anchor_quality(anchor)
+        quality_counts[bucket] = quality_counts.get(bucket, 0) + 1
+        if bucket == "bad" and len(bad_examples) < 5:
+            bad_examples.append(
+                {
+                    "href": _short_path(anchor.href) or anchor.href,
+                    "text": (anchor.text or "(empty)")[:80],
+                }
+            )
+
+    total = len(all_internal)
+    bad_ratio = quality_counts["bad"] / total
+
+    # Orphan detection — informational only (see docstring).
+    sampled_canonical_urls = {s.url for s in successful}
+    inbound: dict[str, set[str]] = {url: set() for url in sampled_canonical_urls}
+    # Each anchor href that exactly matches a sampled canonical URL gets
+    # credited to its source page.
+    for src, anchors in [(target.url, home_anchors), *sampled_anchor_lists]:
+        for anchor in anchors:
+            if not anchor.is_internal:
+                continue
+            href_no_query = anchor.href.split("?", 1)[0].rstrip("/")
+            for sampled_url in sampled_canonical_urls:
+                if sampled_url.rstrip("/") == href_no_query and sampled_url != src:
+                    inbound[sampled_url].add(src)
+                    break
+    orphan_urls = [
+        _short_path(url) for url, sources in inbound.items() if not sources
+    ]
+
+    # Status thresholds.
+    if bad_ratio < _LINK_BAD_RATIO_PASS:
+        status = CheckStatus.PASS
+        score = 1.0
+        detail = (
+            f"Internal anchor text reads cleanly across the homepage and "
+            f"{len(successful)} sampled page(s) "
+            f"({total - quality_counts['bad']}/{total} descriptive). AI "
+            f"crawlers can infer topic from the link graph without rendering JS."
+        )
+    elif bad_ratio < _LINK_BAD_RATIO_OK:
+        status = CheckStatus.PASS
+        score = 0.85
+        detail = (
+            f"Most internal links use descriptive anchor text "
+            f"({total - quality_counts['bad']}/{total}), but "
+            f"{quality_counts['bad']} use generic phrases or bare URLs "
+            f'(e.g. "{bad_examples[0]["text"]}" → {bad_examples[0]["href"]}). '
+            f"Replace these with text describing the destination — anchors "
+            f"are a primary topic signal for AI crawlers."
+        )
+    elif bad_ratio < _LINK_BAD_RATIO_WARN:
+        status = CheckStatus.WARN
+        score = 0.55
+        detail = (
+            f"{quality_counts['bad']}/{total} internal links use generic "
+            f'anchor text like "click here" / "read more" / bare URLs '
+            f"(examples: "
+            + "; ".join(
+                f'"{ex["text"]}" \u2192 {ex["href"]}'
+                for ex in bad_examples[:3]
+            )
+            + "). AI engines extract topic from anchor text — these are "
+            "wasted opportunities to teach crawlers what each linked page "
+            "is about."
+        )
+    else:
+        status = CheckStatus.FAIL
+        score = 0.25
+        first = bad_examples[0]
+        detail = (
+            f"{quality_counts['bad']}/{total} internal links carry no "
+            f"descriptive text (generic phrases, bare URLs, or empty "
+            f'anchors — e.g. "{first["text"]}" → {first["href"]}). '
+            f"AI engines effectively can't tell what these links point to "
+            f"without fetching every destination — most won't. Rewrite "
+            f"anchor text to describe the target page in 2–6 meaningful "
+            f"words."
+        )
+
+    if orphan_urls:
+        detail += (
+            f" Orphan(s) within sample: {', '.join(orphan_urls)} — no other "
+            f"scanned page links to them. Heuristic — we sample at most "
+            f"{_SAMPLE_LIMIT} page(s); a full crawl might find inbound links "
+            f"we missed."
+        )
+
+    evidence = {
+        "internal_anchors_total": total,
+        "good": quality_counts["good"],
+        "bad": quality_counts["bad"],
+        "empty_with_accessible_name": quality_counts["empty_named"],
+        "bad_ratio": round(bad_ratio, 3),
+        "bad_examples": bad_examples,
+        "home_internal_anchor_count": home_internal_count,
+        "orphan_urls_in_sample": orphan_urls,
+        "sampled_pages_scanned": [s.url for s in successful],
+    }
+
+    return CheckResult(
+        id="internal_linking",
+        label="Internal link quality",
+        status=status,
+        score=round(score, 3),
+        weight=1.0,
+        detail=detail,
+        evidence=evidence,
+    )
+
+
 async def check_multipage_depth(
     target: WebsiteTarget, fetcher: Fetcher, home_html: str
 ) -> list[CheckResult]:
-    """Run the multi-page sample audit. Returns the depth row + content_depth row.
+    """Run the multi-page sample audit.
 
-    The content-depth check shares the multi-page sampler's fetches — it
-    inspects the deepest of the same pages — so we don't pay for any extra
-    HTTP traffic to add the article-length signal.
+    Returns three rows:
+
+    - ``multipage_depth`` (Content Clarity) — aggregate signal across
+      sampled pages
+    - ``content_depth`` (Content Clarity) — Princeton word-count band
+      score on the deepest sampled page
+    - ``internal_linking`` (Discoverability — routed by ID in main.py) —
+      anchor-text quality + orphan detection across the same pages
+
+    All three share the multi-page sampler's fetches — no extra HTTP
+    traffic compared to the gap-2 baseline.
     """
     if not home_html:
         return [
@@ -662,6 +1041,9 @@ async def check_multipage_depth(
             _content_depth_skip(
                 "Homepage fetch failed; can't measure article length on inner pages."
             ),
+            _internal_linking_skip(
+                "Homepage fetch failed; can't extract anchor text without HTML."
+            ),
         ]
     picked = pick_sample_urls(home_html, target)
     if not picked:
@@ -671,6 +1053,7 @@ async def check_multipage_depth(
                 "No sampled content page available — see the multi-page row above. "
                 "Article length is measured on the same pages we sample for depth."
             ),
+            _build_internal_linking_check(home_html, target, []),
         ]
     stats = await asyncio.gather(
         *(_fetch_and_summarize(c, fetcher, target.host) for c in picked),
@@ -680,4 +1063,5 @@ async def check_multipage_depth(
     return [
         _build_check_from_stats(stats_list, picked),
         _build_content_depth_check(stats_list),
+        _build_internal_linking_check(home_html, target, stats_list),
     ]
