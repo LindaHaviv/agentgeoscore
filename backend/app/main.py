@@ -34,6 +34,7 @@ from .scanners import (
     check_agent_access,
     check_citability,
     check_content_clarity,
+    check_core_web_vitals,
     check_discoverability,
     check_js_rendering,
     check_multipage_depth,
@@ -140,6 +141,13 @@ async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
         # homepage."
         multipage_task = check_multipage_depth(target, fetcher, home_html)
 
+        # Core Web Vitals — calls Google PageSpeed Insights API (free, key
+        # required). Surfaced under Discoverability since CWV impacts
+        # ranking in the Google index that AI Overviews inherits from.
+        # Always SKIPs cleanly when the API key is unset, so this never
+        # blocks a scan.
+        cwv_task = check_core_web_vitals(target)
+
         # Live probes in parallel
         probe_tasks: list = []
         if include_probe:
@@ -156,16 +164,18 @@ async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
             agent_access_task,
             discoverability_task,
             multipage_task,
+            cwv_task,
             *probe_tasks,
             return_exceptions=True,
         )
 
-    # Unpack (first three are scanner lists, rest are probe CheckResults)
+    # Unpack (first four are scanner lists/single, rest are probe CheckResults)
     agent_access_checks = _unwrap(results[0], errors, "agent_access")
     discoverability_checks = _unwrap(results[1], errors, "discoverability")
     multipage_checks = _unwrap(results[2], errors, "multipage_depth")
+    cwv_check = _unwrap_single(results[3], errors, "core_web_vitals")
     probe_checks = []
-    for res in results[3:]:
+    for res in results[4:]:
         probe_checks.append(_unwrap_single(res, errors, "probe"))
 
     # check_multipage_depth returns three rows; the internal-linking row is
@@ -178,13 +188,15 @@ async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
         c for c in (multipage_checks or []) if c.id == "internal_linking"
     ]
 
+    discoverability_extras = list(js_render_checks) + multipage_for_discoverability
+    if cwv_check is not None:
+        discoverability_extras.append(cwv_check)
+
     categories = [
         build_category(CategoryId.AGENT_ACCESS, agent_access_checks or []),
         build_category(
             CategoryId.DISCOVERABILITY,
-            (discoverability_checks or [])
-            + js_render_checks
-            + multipage_for_discoverability,
+            (discoverability_checks or []) + discoverability_extras,
         ),
         build_category(CategoryId.STRUCTURED_DATA, structured_data_checks),
         build_category(

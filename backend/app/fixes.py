@@ -351,6 +351,39 @@ export default async function Page() {
 // Last resort — proxy crawler UAs through a service like prerender.io."""
 
 
+CORE_WEB_VITALS_SNIPPET = """// Core Web Vitals are part of Google's ranking signal — and Google AI
+// Overviews inherits from that index. Below is the Lighthouse-recommended
+// stack of fixes for the three CWV metrics, ordered by typical impact.
+
+// 1. LCP (Largest Contentful Paint) — target < 2.5s on mobile
+//    Almost always: hero image / hero font is too heavy or fetched late.
+//    Fixes:
+//      - <link rel="preload" as="image" href="/hero.webp" fetchpriority="high">
+//      - Convert hero images to AVIF/WebP, target < 100 KB above the fold.
+//      - Self-host or use <link rel="preconnect"> on Google Fonts.
+//      - Move blocking <script> tags out of <head> or add `defer`.
+//      - For Next.js: import { Image } with priority=true on hero images.
+
+// 2. CLS (Cumulative Layout Shift) — target < 0.10
+//    Almost always: images, ads, or fonts that arrive late and shove the
+//    layout. Fixes:
+//      - Always specify width + height on <img> and <video>.
+//      - Reserve space for ads / embeds with a fixed-size container.
+//      - Use `font-display: optional` instead of `swap` to avoid late-FOIT shifts.
+
+// 3. INP (Interaction to Next Paint) — target < 200 ms
+//    Heavy main-thread work blocking input handlers. Fixes:
+//      - Code-split the homepage bundle (Next.js does this automatically).
+//      - Defer hydration of below-the-fold components.
+//      - Use `requestIdleCallback` for non-critical work.
+//      - Audit third-party scripts (analytics, chat widgets) — many are
+//        synchronous and block input by 100+ ms.
+
+// Verify with:
+//   npx unlighthouse --site https://example.com
+//   or PageSpeed Insights: https://pagespeed.web.dev/?url=https://example.com"""
+
+
 INTERNAL_LINKING_SNIPPET = """<!-- Anchor text is a primary topic signal for AI crawlers. Replace generic
      phrases with text that describes the destination page in 2–6 words.
      The closer the anchor text matches the headline of the linked page,
@@ -469,6 +502,18 @@ FIX_LIBRARY: dict[str, FixTemplate] = {
         "snippet": INTERNAL_LINKING_SNIPPET,
         "snippet_language": "html",
         "docs_url": "https://developers.google.com/search/docs/crawling-indexing/links-crawlable",
+    },
+    "core_web_vitals": {
+        "severity_on_fail": "important",
+        "severity_on_warn": "minor",
+        "effort": "high",
+        "score_lift_fail": 5,
+        "score_lift_warn": 2,
+        "title_fail": "Get LCP, CLS, and INP into Google's 'good' tier",
+        "title_warn": "Push borderline Core Web Vitals into the 'good' tier",
+        "snippet": CORE_WEB_VITALS_SNIPPET,
+        "snippet_language": "javascript",
+        "docs_url": "https://web.dev/articles/vitals",
     },
     # Agent Access ------------------------------------------------------------
     "robots_exists": {
