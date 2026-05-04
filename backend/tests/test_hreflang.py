@@ -225,6 +225,22 @@ def test_protocol_relative_hreflang_urls_are_treated_as_absolute() -> None:
     assert result.evidence["relative_hrefs"] == []
 
 
+def test_detail_preserves_proper_nouns_and_acronyms_in_notes() -> None:
+    """Regression: ``str.capitalize()`` lowercases the rest of a string,
+    which would corrupt "BCP 47", "Google", "URLs", "x-default" in the
+    notes. The detail must keep these intact when notes are present."""
+    head = (
+        _alt("en", "https://x.com/")
+        + _alt("english", "https://x.com/en/")  # invalid BCP 47 → triggers a note
+        + _alt("fr", "https://x.com/fr/")
+    )
+    result = check_hreflang(_page(head=head))
+    # Both "BCP 47" and "Google" must survive verbatim — they appear in the
+    # notes after the first one is uppercased.
+    assert "BCP 47" in result.detail
+    assert "Google" in result.detail
+
+
 def test_x_default_is_not_counted_as_a_language_variant() -> None:
     """Detail should report N language variants + x-default, not N+1
     variants. Verifies the human-readable copy doesn't mislead."""

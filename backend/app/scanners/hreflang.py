@@ -292,7 +292,11 @@ def check_hreflang(html: str) -> CheckResult:
             "user."
         )
     if notes:
-        detail += " " + "; ".join(notes).capitalize() + "."
+        # Uppercase only the first character so proper nouns and acronyms in
+        # the notes (BCP 47, Google, URLs, x-default) survive intact.
+        # ``str.capitalize()`` would lowercase all of them.
+        joined = "; ".join(notes)
+        detail += " " + joined[0].upper() + joined[1:] + "."
 
     return CheckResult(
         id="hreflang",
