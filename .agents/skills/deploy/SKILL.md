@@ -4,8 +4,8 @@ Reference for shipping the frontend (devinapps) and backend (Fly) of AgentGEOSco
 
 ## Live URLs
 - Frontend (devinapps): `https://dist-olcivbch.devinapps.com`
-- Backend (Fly): `https://agentgeoscore-backend-qoshfioj.fly.dev`
-- Fly app name: `agentgeoscore-backend`
+- Backend (Fly): `https://agentgeoscore-1ei53w.fly.dev`
+- Fly app name: `agentgeoscore-1ei53w`
 
 ## Frontend — build + deploy
 
@@ -31,7 +31,7 @@ None of this fails CI (`vitest + tsc + build` all pass). It only manifests on a 
 
 ```bash
 cd frontend
-VITE_API_BASE=https://agentgeoscore-backend-qoshfioj.fly.dev npm run build
+VITE_API_BASE=https://agentgeoscore-1ei53w.fly.dev npm run build
 ```
 
 Then deploy the `frontend/dist` directory to devinapps via the `deploy` tool (`command="frontend"`, `dir="/abs/path/to/frontend/dist"`).
@@ -48,7 +48,7 @@ curl -sS "https://dist-olcivbch.devinapps.com/assets/$CUR_JS" | grep -oaE 'https
 
 ## Backend — build + deploy (Fly)
 
-Backend runs on Fly at `agentgeoscore-backend`. A `fly.toml` + auto-generated Dockerfile live under `backend/`. Deploy via the `deploy` tool (`command="backend"`, `dir="/abs/path/to/backend"`).
+Backend runs on Fly at `agentgeoscore-1ei53w`. A `fly.toml` + Dockerfile live at the **repo root** (committed in PR #23). Fly's GitHub-deploy integration auto-deploys on every merge to `main` — no manual `fly deploy` needed. Manual deploys still work via `flyctl deploy --app agentgeoscore-1ei53w` from the repo root.
 
 ### Environment variables that matter
 
@@ -56,10 +56,11 @@ Backend runs on Fly at `agentgeoscore-backend`. A `fly.toml` + auto-generated Do
 - `BACKEND_ORIGIN` — optional pin for the public backend host used in `og:image` meta. If set, `/share` ignores the inbound `Host` header when composing absolute URLs. Set this on Fly to harden against Host-header spoofing:
 
 ```bash
-fly secrets set --app agentgeoscore-backend BACKEND_ORIGIN=https://agentgeoscore-backend-qoshfioj.fly.dev
+fly secrets set --app agentgeoscore-1ei53w BACKEND_ORIGIN=https://agentgeoscore-1ei53w.fly.dev
 ```
 
-- Probe keys (all optional, graceful skip when absent): `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `BRAVE_API_KEY`, `GROQ_API_KEY`. Set via `fly secrets set --app agentgeoscore-backend KEY=value`.
+- Probe keys (all optional, graceful skip when absent): `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `BRAVE_API_KEY`, `GROQ_API_KEY`. Set via `fly secrets set --app agentgeoscore-1ei53w KEY=value`.
+- `PAGESPEED_API_KEY` — Google PageSpeed Insights API key for Core Web Vitals (gap #7). Same `fly secrets set` pattern.
 
 ### Fonts
 
@@ -69,16 +70,16 @@ The OG image renderer loads bundled fonts from `backend/app/assets/fonts/` (Deja
 
 ```bash
 # OG PNG should be 1200x630 RGB, >25 KB
-curl -sS -o /tmp/og.png 'https://agentgeoscore-backend-qoshfioj.fly.dev/api/og?d=stripe.com&s=94&g=A'
+curl -sS -o /tmp/og.png 'https://agentgeoscore-1ei53w.fly.dev/api/og?d=stripe.com&s=94&g=A'
 python3 -c "from PIL import Image; print(Image.open('/tmp/og.png').size)"  # -> (1200, 630)
 ls -la /tmp/og.png                                                          # expect > 25 KB
 # Share route should return HTML w/ OG meta + refresh redirect
-curl -sS 'https://agentgeoscore-backend-qoshfioj.fly.dev/share?d=stripe.com&s=94&g=A' | grep -E 'og:image|refresh'
+curl -sS 'https://agentgeoscore-1ei53w.fly.dev/share?d=stripe.com&s=94&g=A' | grep -E 'og:image|refresh'
 ```
 
 ## End-to-end deploy smoke test (run after either deploy)
 
 1. Visit `https://dist-olcivbch.devinapps.com/`, scan `stripe.com`, confirm report renders with a numeric score.
 2. Scroll to ShareBar, click "Copy link".
-3. Read the clipboard: `DISPLAY=:0 xclip -selection clipboard -o` — expect `https://agentgeoscore-backend-qoshfioj.fly.dev/share?d=stripe.com&s=<score>&g=<grade>`, **not** the SPA URL.
+3. Read the clipboard: `DISPLAY=:0 xclip -selection clipboard -o` — expect `https://agentgeoscore-1ei53w.fly.dev/share?d=stripe.com&s=<score>&g=<grade>`, **not** the SPA URL.
 4. Paste that URL into `https://www.opengraph.xyz/url/<encoded>` and verify the card preview.
