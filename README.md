@@ -2,6 +2,10 @@
 
 > Generative Engine Optimization — score & grade any site for AI-agent visibility.
 
+![AgentGEOScore report breakdown — 80/B for stripe.com showing all five scoring categories](docs/hero-breakdown.png)
+
+[Live demo](https://dist-olcivbch.devinapps.com/) · [The GEO paper](https://arxiv.org/abs/2311.09735) · [Hardening](#hardening) · [Contributing](#contributing) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md)
+
 Paste a URL, get:
 
 - a **0–100 score** + letter grade **A–F**
