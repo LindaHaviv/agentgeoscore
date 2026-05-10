@@ -11,6 +11,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from .compare import run_compare
 from .fetcher import Fetcher
@@ -64,6 +68,78 @@ FRONTEND_ORIGIN = os.environ.get(
 # a social-media image proxy. Leave unset to fall back to request-derived.
 BACKEND_ORIGIN = os.environ.get("BACKEND_ORIGIN", "").rstrip("/")
 
+# Comma-separated list of allowed CORS origins. Defaults to the prod
+# frontend; ``*`` is still supported for local dev (``ALLOWED_ORIGINS=*``)
+# but only when explicitly opted into via env.
+_DEFAULT_ALLOWED_ORIGINS = (
+    f"{FRONTEND_ORIGIN},http://localhost:5173,http://127.0.0.1:5173"
+)
+_ALLOWED_ORIGINS_RAW = os.environ.get(
+    "ALLOWED_ORIGINS", _DEFAULT_ALLOWED_ORIGINS
+).strip()
+if _ALLOWED_ORIGINS_RAW == "*":
+    ALLOWED_ORIGINS: list[str] = ["*"]
+else:
+    ALLOWED_ORIGINS = [
+        o.strip() for o in _ALLOWED_ORIGINS_RAW.split(",") if o.strip()
+    ]
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Apply common defense-in-depth headers to every response.
+
+    Most are belt-and-suspenders behind Fly's edge, but having them on the
+    origin response is a) helpful when the API is consumed directly (e.g.
+    a JSON request from a third-party tool) and b) cheap insurance.
+    """
+
+    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+        response = await call_next(request)
+        # 1y HSTS so a stripped HTTP request once we've upgraded never
+        # downgrades again. ``includeSubDomains`` is fine — we don't run
+        # plain-HTTP services on subdomains.
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault(
+            "Referrer-Policy", "strict-origin-when-cross-origin"
+        )
+        # The API serves JSON + a single ``/share`` HTML shell. The shell
+        # uses inline ``<meta>`` and ``<title>`` only — no inline JS — so
+        # a tight CSP is safe.
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'none'; "
+            "img-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'none'; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'none'; "
+            "form-action 'none'",
+        )
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+        )
+        return response
+
+
+# slowapi limiter — keys requests by client IP. Fly forwards the real
+# client IP via ``Fly-Client-IP``; ``get_remote_address`` reads
+# ``request.client.host`` which uvicorn populates from
+# ``X-Forwarded-For`` when started with ``--proxy-headers`` (we do —
+# see Dockerfile CMD).
+limiter = Limiter(
+    key_func=get_remote_address,
+    # Default cap protects every endpoint even if a future route forgets
+    # to declare its own limit.
+    default_limits=["120/minute"],
+)
+
 app = FastAPI(
     title="AgentGEOScore API",
     description=(
@@ -73,9 +149,12 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -242,7 +321,8 @@ async def _run_full_scan(target: WebsiteTarget, include_probe: bool) -> Report:
 
 
 @app.post("/api/scan", response_model=Report)
-async def scan(req: ScanRequest) -> Report:
+@limiter.limit("10/minute")
+async def scan(request: Request, req: ScanRequest) -> Report:
     try:
         target = WebsiteTarget.from_url(str(req.url))
     except ValueError as e:
@@ -251,7 +331,8 @@ async def scan(req: ScanRequest) -> Report:
 
 
 @app.post("/api/compare", response_model=CompareResponse)
-async def compare(req: CompareRequest) -> CompareResponse:
+@limiter.limit("5/minute")
+async def compare(request: Request, req: CompareRequest) -> CompareResponse:
     """Run the target plus 1-3 competitor domains in parallel.
 
     Reuses the existing scan pipeline for each domain (with citation probes
@@ -277,7 +358,9 @@ async def test_prompt_categories() -> dict:
 
 
 @app.get("/api/test-prompts")
+@limiter.limit("30/minute")
 async def test_prompts_override(
+    request: Request,
     domain: str = Query(..., min_length=1, max_length=253),
     category: str = Query(..., min_length=1, max_length=64),
 ) -> dict:
@@ -333,7 +416,9 @@ def _sanitize_score(raw: int) -> int:
 
 
 @app.get("/api/og", response_class=Response)
+@limiter.limit("60/minute")
 async def og_image(
+    request: Request,
     d: str | None = Query(default=None, description="Target domain"),
     s: int = Query(default=0, ge=0, le=100),
     g: str = Query(default="?", min_length=0, max_length=2),
