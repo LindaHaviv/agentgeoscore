@@ -140,6 +140,19 @@ All keys are server-side. End users never see, paste, or know about them.
 - No auth, no cookies, no third-party tracking.
 - Probe API keys never leave the backend.
 
+## Hardening
+
+The backend is a public-facing fetch-arbitrary-URLs service, so it's hardened accordingly:
+
+- **SSRF guard** ([`backend/app/url_safety.py`](backend/app/url_safety.py)) — every outbound URL (and every redirect hop) is validated against private / loopback / link-local / multicast / reserved / CGNAT IP ranges. Bare-IP and non-default-port inputs are rejected up front.
+- **Per-IP rate limits** via [slowapi](https://github.com/laurentS/slowapi) — `/api/scan` 10/min, `/api/compare` 5/min, `/api/test-prompts` 30/min, `/api/og` 60/min, plus a 120/min global default.
+- **Bounded responses** — fetcher caps body size at 5 MiB and follows at most 5 redirects.
+- **Tight CORS** — defaults to the configured `FRONTEND_ORIGIN` plus localhost for dev. `*` only when explicitly opted into via `ALLOWED_ORIGINS=*`.
+- **Defence-in-depth headers** on every response: HSTS (1y, includeSubDomains), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, strict CSP (`default-src 'none'` + scoped allowlist), `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` denying camera/mic/geo/FLoC.
+- **Non-root container** — Dockerfile drops to uid 10001 before exec.
+
+See [`SECURITY.md`](SECURITY.md) for the full threat model, known limitations (DNS rebinding), and how to report a vulnerability.
+
 ---
 
 ## Contributing
@@ -196,9 +209,17 @@ The category lexicon lives in `backend/app/test_prompts.py` as a tuple of `Categ
 - Secrets live in Fly's secret store (not in the repo, not in the Devin secret store — they're separate platforms). Use `fly secrets set` or the Fly dashboard at https://fly.io/apps/agentgeoscore-1ei53w/secrets to add or rotate keys.
 - See `.agents/skills/deploy/SKILL.md` for the full redeploy runbook.
 
+## Security
+
+Found a vulnerability? Please **don't** open a public issue — see [`SECURITY.md`](SECURITY.md) for the disclosure process. Short version: email `linda.haviv@gmail.com`, get an ack within 5 days, ship a coordinated fix.
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant 2.1](CODE_OF_CONDUCT.md). By participating, you agree to abide by it.
+
 ## License
 
-MIT. See [`LICENSE`](LICENSE) if present, otherwise treat this repo as MIT-licensed.
+MIT. See [`LICENSE`](LICENSE).
 
 ## Acknowledgements
 
