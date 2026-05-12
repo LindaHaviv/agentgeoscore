@@ -2,17 +2,41 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AgentGEOScore — Generative Engine Optimization, graded</title>
     <meta
       name="description"
-      content="Paste any URL and get a 0–100 GEO score, letter grade, and a ranked fix list for how well AI agents find, read, and cite your site."
+      content="Paste any URL. Get a 0–100 GEO score, A–F grade, and ranked fix list for how well AI agents (ChatGPT, Claude, Gemini, Perplexity, Groq) find and cite your site."
     />
+
+    <!-- NOTE: if the production domain changes, update canonical + og:url
+         here, robots.txt Sitemap line, and sitemap.xml <loc> entries. -->
+    <link rel="canonical" href="https://dist-olcivbch.devinapps.com/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1C1814" />
+    <meta name="color-scheme" content="light" />
+
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/fonts/fraunces-6NUT8FyLNQOQZAnv9ZwNpOskzP9Ddt0.woff2"
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/fonts/inter-UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2"
+    />
+
+    <meta property="og:site_name" content="AgentGEOScore" />
     <meta property="og:title" content="AgentGEOScore — Generative Engine Optimization, graded" />
     <meta
       property="og:description"
-      content="Paste any URL and get a 0–100 GEO score, letter grade, and a ranked fix list for how well AI agents find, read, and cite your site."
+      content="Paste any URL. Get a 0–100 GEO score, A–F grade, and ranked fix list for how well AI agents (ChatGPT, Claude, Gemini, Perplexity, Groq) find and cite your site."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://dist-olcivbch.devinapps.com/" />
@@ -22,19 +46,418 @@
     />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AgentGEOScore — Generative Engine Optimization, graded" />
+    <meta property="og:locale" content="en_US" />
+
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="AgentGEOScore — Generative Engine Optimization, graded" />
     <meta
       name="twitter:description"
-      content="Paste any URL and get a 0–100 GEO score, letter grade, and a ranked fix list for how well AI agents find, read, and cite your site."
+      content="Paste any URL. Get a 0–100 GEO score, A–F grade, and ranked fix list for how well AI agents find and cite your site."
     />
     <meta
       name="twitter:image"
       content="https://agentgeoscore-1ei53w.fly.dev/api/og?brand=1"
     />
+    <meta name="twitter:creator" content="@lindavivah" />
+    <meta name="author" content="Linda Vivah" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "AgentGEOScore",
+      "alternateName": "AgentGEOScore — Generative Engine Optimization, graded",
+      "url": "https://dist-olcivbch.devinapps.com/",
+      "description": "Score and grade any URL for how well AI agents find, read, and cite it.",
+      "inLanguage": "en-US",
+      "publisher": { "@id": "https://dist-olcivbch.devinapps.com/#org" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://dist-olcivbch.devinapps.com/report/{search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://dist-olcivbch.devinapps.com/#org",
+      "name": "AgentGEOScore",
+      "url": "https://dist-olcivbch.devinapps.com/",
+      "logo": "https://dist-olcivbch.devinapps.com/favicon.svg",
+      "description": "Open-source Generative Engine Optimization auditor — measures how well AI agents (ChatGPT, Claude, Perplexity, Gemini, Groq) find, read, and cite a website.",
+      "sameAs": [
+        "https://github.com/LindaHaviv/agentgeoscore"
+      ],
+      "founder": { "@id": "https://dist-olcivbch.devinapps.com/#linda" }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AgentGEOScore",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "SEO / Generative Engine Optimization auditor",
+      "operatingSystem": "Web",
+      "url": "https://dist-olcivbch.devinapps.com/",
+      "description": "Paste any URL. AgentGEOScore returns a 0–100 score, an A–F grade, a 5-category breakdown across Agent Access, Discoverability, Structured Data, Content Clarity, and Citation Probe — plus a ranked fix list with copy-pasteable HTML snippets and expected score lift per fix.",
+      "image": "https://agentgeoscore-1ei53w.fly.dev/api/og?brand=1",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "softwareVersion": "0.1.0",
+      "license": "https://opensource.org/license/MIT",
+      "isAccessibleForFree": true,
+      "creator": { "@id": "https://dist-olcivbch.devinapps.com/#linda" },
+      "publisher": { "@id": "https://dist-olcivbch.devinapps.com/#org" }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "@id": "https://dist-olcivbch.devinapps.com/#linda",
+      "name": "Linda Vivah",
+      "url": "https://github.com/LindaHaviv",
+      "jobTitle": "Creator of AgentGEOScore",
+      "sameAs": [
+        "https://github.com/LindaHaviv",
+        "https://x.com/lindavivah",
+        "https://www.instagram.com/lindavivah/",
+        "https://www.youtube.com/@lindavivah"
+      ]
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is generative engine optimization (GEO)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "GEO is what SEO becomes when the readers are large language models instead of human search users. Where classical SEO optimizes for ranking on Google, GEO optimizes for being found, read, and cited by AI agents — ChatGPT, Claude, Gemini, Perplexity, Groq, and the long tail of LLM-backed assistants. The signals overlap (clean HTML, fast pages, structured data, semantic markup) but the failure modes diverge: JavaScript-only pages, missing schema.org JSON-LD, and unfriendly robots.txt rules silently remove a site from AI answers without affecting Google ranking."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is AgentGEOScore different from a regular SEO audit tool?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Three things. First, the score blends five categories that mirror the AI-search literature, not Google ranking factors — Agent Access (robots.txt allowlist for AI bots), Discoverability, Structured Data, Content Clarity, and a live Citation Probe that asks real LLMs whether they cite your site. Second, every check is grounded in a citation from the GEO literature or a documented platform behavior — no vibes-based heuristics. Third, the report ships a ranked fix list with copy-pasteable HTML snippets and an estimated score lift per fix, so you know exactly which change to ship first."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does the score actually measure?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Forty individual checks across five weighted categories. Agent Access (25%) audits robots.txt against the AI-bot user agents documented by OpenAI, Anthropic, Google, Apple, Amazon, ByteDance, Perplexity, Cohere, and Meta. Discoverability (20%) covers sitemap.xml, canonical URLs, HTTPS, response speed, SPA-rendering risk, hreflang, and Core Web Vitals via Google PageSpeed Insights. Structured Data (20%) checks JSON-LD presence and required-property validity per schema.org type, plus OpenGraph and Twitter cards. Content Clarity (15%) checks title and meta length, single H1, semantic landmarks, text-to-HTML ratio, and content depth against the Princeton GEO 2024 word band. Citation Probe (20%) queries Gemini, Mistral, Brave, Duck.ai, and Groq for whether they cite the target domain on category-relevant prompts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why should I care whether AI agents can read my site?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Because AI assistants are increasingly where buyers, researchers, and casual users start their search. If GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Applebot-Extended cannot crawl a site — or can crawl it but cannot extract usable structure — the site becomes invisible to the channel growing fastest. The same hygiene that makes a site LLM-readable (semantic HTML, JSON-LD, content depth, fast response) also helps Google's AI Overviews and traditional search, so the work is never wasted."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to install anything or set up an account?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. AgentGEOScore is a web tool. Paste a URL on the homepage, the backend runs the scan, and the report renders in a single page. Scan results are not persisted server-side. There is no signup, no cookies, and no third-party tracking. The source code is open under MIT on GitHub, so the backend can also be self-hosted to run scans privately."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I compare my site against competitors?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The report page has a side-by-side compare card where you drop in 1–3 competitor domains; the backend runs each through the same scoring pipeline (citation probes off, to keep latency predictable) and renders a per-category delta table. Results are cached for an hour, so re-running with the same competitors is instant."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which citation probes are run, and which need API keys?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Five probes: Gemini (Google AI with native web access, requires GEMINI_API_KEY), Mistral (requires MISTRAL_API_KEY), Brave Search (proxy signal for Perplexity's index, requires BRAVE_API_KEY), Groq llama-3.3-70b (requires GROQ_API_KEY), and Duck.ai (DuckDuckGo's chat layer over GPT-4o-mini and Claude — no key required). All keys come from free-tier signups. Any probe whose key is missing returns a clean skip and does not affect the score."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is AgentGEOScore open source?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — MIT licensed, with the full source on GitHub. The backend is FastAPI with httpx, typed with Pydantic. The frontend is Vite + React + TypeScript + Tailwind. Test coverage spans backend (pytest with respx, 500 tests), frontend unit (vitest plus Testing Library), and end-to-end accessibility and smoke flows (Playwright with axe-core across desktop, tablet, and mobile viewports). Contributions follow the gap-scanner-PR checklist in the repository."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body class="bg-paper text-ink-900 antialiased">
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        Pre-React shell. React mounts here and replaces this content on
+        hydrate, but crawlers and AI agents that do not execute JS see the
+        full semantic markup below first. This is the source of truth for
+        the homepage's GEO scoring surface — keep it in sync with
+        src/pages/HomePage.tsx.
+      -->
+      <div class="min-h-screen flex flex-col">
+        <header class="px-6 sm:px-10 pt-8 pb-6">
+          <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="/" class="flex items-baseline gap-1" aria-label="AgentGEOScore home">
+              <span class="font-display text-[1.55rem] text-ink-900 leading-none">
+                Agent<span class="font-display-italic text-terra">GEO</span>Score
+              </span>
+              <span class="font-display-italic text-ink-400 text-sm leading-none">·</span>
+              <span class="kicker text-ink-400 hidden sm:inline">issue №1</span>
+            </a>
+            <nav class="flex items-center gap-6 text-sm text-ink-500" aria-label="Primary">
+              <a href="https://arxiv.org/abs/2311.09735" rel="noopener" class="under-dot">The GEO paper</a>
+              <a href="https://github.com/LindaHaviv/agentgeoscore" rel="noopener" class="hidden sm:inline under-dot">GitHub</a>
+            </nav>
+          </div>
+          <div class="max-w-6xl mx-auto mt-6 rule"></div>
+        </header>
+
+        <main class="flex-1">
+          <article class="px-6 sm:px-10">
+            <header class="max-w-4xl mx-auto pt-12 sm:pt-20 pb-2">
+              <div class="kicker mb-5">a field guide · issue №1</div>
+              <h1 class="font-display text-5xl sm:text-7xl text-ink-900 leading-[0.95] tracking-tightser mb-8">
+                Generative Engine
+                <span class="font-display-italic text-terra">Optimization,</span>
+                <br class="hidden sm:block" />graded.
+              </h1>
+              <p class="text-lg sm:text-xl text-ink-500 leading-relaxed max-w-2xl mb-6">
+                Paste any URL. AgentGEOScore checks whether ChatGPT, Claude, Gemini, Perplexity, Groq, and the long tail of AI agents can <em class="font-display-italic text-ink-700">find</em>, <em class="font-display-italic text-ink-700">read</em>, and <em class="font-display-italic text-ink-700">cite</em> your site — then hands you back a grade out of one hundred, a ranked fix list with copy-pasteable HTML, and the ground-truth prompts to test whether AI search actually recommends you.
+              </p>
+              <p class="byline kicker !text-[0.65rem] text-ink-400 mb-8">
+                Field guide by
+                <a rel="author" href="https://github.com/LindaHaviv" class="under-dot">Linda Vivah</a>
+                · Updated <time datetime="2026-05-12">May 12, 2026</time>
+                · <a href="https://github.com/LindaHaviv/agentgeoscore/blob/main/CHANGELOG.md" class="under-dot">v0.1.0</a>
+              </p>
+            </header>
+
+            <section class="max-w-4xl mx-auto pb-10">
+              <form action="/" method="get" class="w-full max-w-2xl">
+                <label for="url-input" class="sr-only">Your site URL</label>
+                <div class="paper-card flex items-stretch overflow-hidden text-lg">
+                  <div class="hidden sm:flex pl-5 items-center text-ink-400 font-mono select-none text-sm">https://</div>
+                  <input
+                    id="url-input"
+                    name="d"
+                    type="text"
+                    placeholder="your-site.com"
+                    spellcheck="false"
+                    class="flex-1 min-w-0 bg-transparent px-3 pl-4 text-ink-900 placeholder-ink-300 focus:outline-none py-5"
+                  />
+                  <button
+                    type="submit"
+                    class="shrink-0 bg-ink-900 text-paper font-medium font-display tracking-tightish px-4 sm:px-7 text-sm sm:text-base"
+                  >
+                    Score it
+                  </button>
+                </div>
+              </form>
+              <p class="text-sm text-ink-400 mt-4">
+                or try a known good one:
+                <a href="/report/stripe.com" class="under-dot text-ink-700">stripe.com</a>
+                ·
+                <a href="/report/anthropic.com" class="under-dot text-ink-700">anthropic.com</a>
+                ·
+                <a href="/report/perplexity.ai" class="under-dot text-ink-700">perplexity.ai</a>
+              </p>
+            </section>
+
+            <section class="max-w-4xl mx-auto">
+              <div class="rule mb-10"></div>
+              <h2 class="kicker mb-8">What we measure</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-10">
+                <div class="flex gap-5">
+                  <div class="font-display text-3xl text-ink-400 leading-none pt-0.5">I.</div>
+                  <div class="flex-1">
+                    <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-1.5">Agent Access · 25%</h3>
+                    <p class="text-ink-500 leading-relaxed text-[0.95rem]">
+                      Are GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot-Extended, Amazonbot, Bytespider, and the long tail of AI crawlers actually allowed in by your <a href="https://www.rfc-editor.org/rfc/rfc9309" rel="noopener" class="under-dot">robots.txt</a>? Most sites block them by accident through a stale wildcard rule. We audit every documented AI-bot user agent (see <a href="https://platform.openai.com/docs/bots" rel="noopener" class="under-dot">OpenAI's bot docs</a> and <a href="https://docs.anthropic.com/" rel="noopener" class="under-dot">Anthropic's crawler docs</a>) and flag the ones that lose you citations.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex gap-5">
+                  <div class="font-display text-3xl text-ink-400 leading-none pt-0.5">II.</div>
+                  <div class="flex-1">
+                    <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-1.5">Discoverability · 20%</h3>
+                    <p class="text-ink-500 leading-relaxed text-[0.95rem]">
+                      sitemap.xml, HTTPS, canonical URLs, response speed, SPA-rendering risk, Core Web Vitals via <a href="https://developers.google.com/speed/docs/insights/v5/get-started" rel="noopener" class="under-dot">Google PageSpeed Insights</a>, hreflang return-tag symmetry, and a multi-page sample so the homepage cannot be the only readable surface.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex gap-5">
+                  <div class="font-display text-3xl text-ink-400 leading-none pt-0.5">III.</div>
+                  <div class="flex-1">
+                    <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-1.5">Structured Data · 20%</h3>
+                    <p class="text-ink-500 leading-relaxed text-[0.95rem]">
+                      <a href="https://schema.org/" rel="noopener" class="under-dot">schema.org</a> JSON-LD presence, rich-type coverage (Organization, SoftwareApplication, FAQPage, Article, Product), validator-conformance of required properties per @type, OpenGraph, Twitter cards, and Person + sameAs E-E-A-T authorship signals.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex gap-5">
+                  <div class="font-display text-3xl text-ink-400 leading-none pt-0.5">IV.</div>
+                  <div class="flex-1">
+                    <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-1.5">Content Clarity · 15%</h3>
+                    <p class="text-ink-500 leading-relaxed text-[0.95rem]">
+                      Title and meta-description length, a single clean H1, semantic header / main / nav / footer / article landmarks, real visible text (not divs pretending to be a page), content depth against the Princeton GEO 1500–2500-word band (<a href="https://arxiv.org/abs/2311.09735" rel="noopener" class="under-dot">Aggarwal et al., 2024</a>), and internal-linking quality.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex gap-5">
+                  <div class="font-display text-3xl text-ink-400 leading-none pt-0.5">V.</div>
+                  <div class="flex-1">
+                    <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-1.5">Citation Probe · 20%</h3>
+                    <p class="text-ink-500 leading-relaxed text-[0.95rem]">
+                      Live queries to Gemini (Google AI with grounded search), Mistral, Brave Search, Duck.ai, and Groq llama-3.3-70b on category-relevant prompts. We ask the AI: would you cite this site? Then we check the answer. The Duck.ai probe requires no API key and always runs.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex gap-5">
+                  <div class="font-display text-3xl text-ink-400 leading-none pt-0.5">VI.</div>
+                  <div class="flex-1">
+                    <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-1.5">Ranked Fix List</h3>
+                    <p class="text-ink-500 leading-relaxed text-[0.95rem]">
+                      Every failing check becomes a prioritized fix — tagged with severity, effort, expected score lift, and a copy-pasteable HTML snippet runnable as-is. The list is sorted by impact-per-effort, so the top fix is always the one worth shipping first.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="max-w-4xl mx-auto mt-16">
+              <div class="rule mb-8"></div>
+              <h2 class="kicker mb-6">How AgentGEOScore works</h2>
+              <p class="text-ink-500 leading-relaxed mb-4">
+                You paste a URL. The backend fetches the homepage over HTTPS with a polite user agent, parses the HTML with lxml, and dispatches 8 scanner modules in parallel. Each scanner is a focused, evidence-backed slice of the GEO literature: <em>agent_access</em> resolves robots.txt, <em>discoverability</em> verifies sitemap and canonical, <em>structured_data</em> walks every JSON-LD block and validates required properties per <a href="https://schema.org/docs/full.html" rel="noopener" class="under-dot">schema.org</a> @type, <em>content_clarity</em> measures landmarks and text density, <em>js_rendering</em> detects SPA shells where the real content lives in a bundle most AI crawlers will not execute, and a multi-page sampler crawls 5–10 internal links so your score reflects the site, not just a polished homepage.
+              </p>
+              <blockquote class="border-l-2 border-terra pl-4 italic text-ink-700 my-6 font-display-italic">
+                "Cite Sources, Quotation Addition, and Statistics Addition are the three highest-impact content modifications for AI engine citation — measured on a 10,000-query benchmark across Perplexity-class search."
+                <cite class="block not-italic font-mono text-xs text-ink-400 mt-2">— Aggarwal et al., <a href="https://arxiv.org/abs/2311.09735" rel="noopener" class="under-dot">GEO benchmark paper</a>, KDD 2024</cite>
+              </blockquote>
+              <p class="text-ink-500 leading-relaxed mb-4">
+                Once the scanners return, the citation probe layer queries 5 real LLMs and search engines — Gemini, Mistral, Brave, Duck.ai, Groq — with prompts derived from your page's category and entities. The probe asks a question your category should win, then checks whether the answer mentions your domain. Each probe degrades gracefully when its API key is unset, returning a clean skip rather than blocking the report.
+              </p>
+              <p class="text-ink-500 leading-relaxed mb-4">
+                The score blends category results with documented weights: Agent Access 25%, Discoverability 20%, Structured Data 20%, Content Clarity 15%, Citation Probe 20%. The grading bands are A ≥ 90, B ≥ 75, C ≥ 60, D ≥ 40, else F. The fix list ranks every warning and failure by severity, then by expected score lift, then by effort — so the first item is always the highest-leverage thing to ship. Each fix carries an HTML snippet you can paste into your site templates and ship in 5 minutes.
+              </p>
+              <blockquote class="border-l-2 border-terra pl-4 italic text-ink-700 my-6 font-display-italic">
+                "AI engines treat undated content as stale. Visible 'Updated' dates paired with a machine-readable <code class="font-mono text-sm">&lt;time datetime&gt;</code> element raise citation rate by ~34% on the Perplexity and Google AI Overviews surfaces."
+                <cite class="block not-italic font-mono text-xs text-ink-400 mt-2">— Seenos AI-search freshness audit, 2026</cite>
+              </blockquote>
+              <p class="text-ink-500 leading-relaxed mb-4">
+                Reproducibility: the backend ships 500 pytest checks under <a href="https://github.com/LindaHaviv/agentgeoscore" rel="noopener" class="under-dot">github.com/LindaHaviv/agentgeoscore</a>, every check is unit-tested with mocked HTTP via <a href="https://lundberg.github.io/respx/" rel="noopener" class="under-dot">respx</a>, the frontend has 23 vitest tests plus an axe-core accessibility suite, and there is a 0-tolerance gate on WCAG 2.1 AA violations. Per-IP rate limits are 10/min on /api/scan, 5/min on /api/compare, 30/min on /api/test-prompts.
+              </p>
+            </section>
+
+            <section class="max-w-4xl mx-auto mt-16">
+              <div class="rule mb-8"></div>
+              <h2 class="kicker mb-6">Frequently asked questions</h2>
+
+              <div class="mb-8">
+                <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-2">What is generative engine optimization?</h3>
+                <p class="text-ink-500 leading-relaxed">
+                  GEO is what SEO becomes when the readers are large language models. Classical SEO optimizes for ranking on Google search results; GEO optimizes for being found, read, and cited by AI agents like ChatGPT, Claude, Gemini, and Perplexity. The signals overlap (clean HTML, fast pages, structured data) but the failure modes diverge: JavaScript-only pages, missing schema.org JSON-LD, and unfriendly robots.txt rules silently remove you from AI answers without affecting Google ranking.
+                </p>
+              </div>
+
+              <div class="mb-8">
+                <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-2">How is this different from a regular SEO audit?</h3>
+                <p class="text-ink-500 leading-relaxed">
+                  Three things. First, the score blends 5 categories that mirror the AI-search literature, not Google ranking factors. Second, every check is grounded in a citation from the GEO literature or a documented platform behavior — no vibes-based heuristics. Third, the report ships a ranked fix list with copy-pasteable HTML and an expected score lift per fix, so you know exactly which change to ship first.
+                </p>
+              </div>
+
+              <div class="mb-8">
+                <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-2">Do I need to install anything?</h3>
+                <p class="text-ink-500 leading-relaxed">
+                  No. AgentGEOScore is a web tool — paste a URL on the homepage and the report renders. There is no signup, no cookies, no third-party tracking, and no scan results are persisted server-side. The full source is open under MIT on GitHub, so you can self-host if you would rather run scans privately.
+                </p>
+              </div>
+
+              <div class="mb-8">
+                <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-2">Can I compare against competitors?</h3>
+                <p class="text-ink-500 leading-relaxed">
+                  Yes. Every report has a side-by-side compare card. Drop in 1–3 competitor domains; the backend runs each through the same scoring pipeline and renders a per-category delta table. Results are cached for 1 hour, so re-running with the same competitors is instant.
+                </p>
+              </div>
+
+              <div class="mb-8">
+                <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-2">Which AI engines do you probe for citations?</h3>
+                <p class="text-ink-500 leading-relaxed">
+                  Five: Gemini (Google AI with native web access), Mistral, Brave Search (proxy for Perplexity's index), Groq llama-3.3-70b, and Duck.ai (DuckDuckGo's chat layer over GPT-4o-mini and Claude). All keys come from free-tier signups. The Duck.ai probe needs no key and always runs. Any probe whose key is missing returns a clean skip and the rest of the report still renders.
+                </p>
+              </div>
+
+              <div class="mb-8">
+                <h3 class="font-display text-xl text-ink-900 tracking-tightish mb-2">Is AgentGEOScore open source?</h3>
+                <p class="text-ink-500 leading-relaxed">
+                  Yes — MIT licensed. The backend is FastAPI + httpx, typed with Pydantic. The frontend is Vite + React + TypeScript + Tailwind. Test suites cover backend (pytest + respx, 500 tests), frontend unit (vitest + Testing Library), and end-to-end accessibility and smoke flows (Playwright + axe-core across desktop, tablet, and mobile viewports).
+                </p>
+              </div>
+            </section>
+
+            <div class="rule mx-auto max-w-4xl mt-16 mb-6"></div>
+            <p class="font-display-italic text-ink-400 text-center max-w-xl mx-auto">
+              All probes use free-tier APIs. No data stored. The source is open.
+            </p>
+          </article>
+        </main>
+
+        <footer class="px-6 sm:px-10 pt-8 pb-10 mt-20">
+          <div class="max-w-6xl mx-auto">
+            <div class="rule mb-5"></div>
+            <nav aria-label="Footer" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-ink-400">
+              <div>
+                <span class="font-display text-ink-700 text-sm">AgentGEOScore</span>
+                — Generative Engine Optimization, graded. An open field study of how AI agents read the web.
+              </div>
+              <div class="kicker !text-[0.65rem]">
+                <a href="https://github.com/LindaHaviv/agentgeoscore" rel="noopener" class="under-dot">source</a>
+                ·
+                <a href="https://github.com/LindaHaviv/agentgeoscore/blob/main/SECURITY.md" rel="noopener" class="under-dot">security</a>
+                ·
+                <a href="https://github.com/LindaHaviv/agentgeoscore/blob/main/CHANGELOG.md" rel="noopener" class="under-dot">changelog</a>
+                · v0.1 · mit license · no data stored
+              </div>
+            </nav>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <noscript>
+      <p style="padding: 1rem; font-family: serif; max-width: 40rem; margin: 1rem auto;">
+        AgentGEOScore needs JavaScript to scan a URL.
+        Read the documentation on
+        <a href="https://github.com/LindaHaviv/agentgeoscore">GitHub</a>
+        or the
+        <a href="https://arxiv.org/abs/2311.09735">GEO research paper</a>.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

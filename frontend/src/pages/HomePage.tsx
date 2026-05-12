@@ -30,6 +30,33 @@ export default function HomePage() {
         </p>
 
         <URLInput onSubmit={handleSubmit} />
+
+        <p className="text-sm text-ink-400 mt-4 text-center sm:text-left">
+          or try a known good one:{' '}
+          <button
+            type="button"
+            onClick={() => handleSubmit('stripe.com')}
+            className="under-dot text-ink-700 hover:text-terra-deep"
+          >
+            stripe.com
+          </button>{' '}
+          ·{' '}
+          <button
+            type="button"
+            onClick={() => handleSubmit('anthropic.com')}
+            className="under-dot text-ink-700 hover:text-terra-deep"
+          >
+            anthropic.com
+          </button>{' '}
+          ·{' '}
+          <button
+            type="button"
+            onClick={() => handleSubmit('perplexity.ai')}
+            className="under-dot text-ink-700 hover:text-terra-deep"
+          >
+            perplexity.ai
+          </button>
+        </p>
       </div>
 
       <div className="max-w-4xl mx-auto">

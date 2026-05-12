@@ -47,5 +47,18 @@ describe('FixList', () => {
     expect(writeText).toHaveBeenCalledWith(
       '<script type="application/ld+json">{}</script>'
     );
+    // Button transitions to confirmation state.
+    expect(screen.getByRole('button', { name: /Copied/i })).toBeInTheDocument();
+  });
+
+  it('falls back to the minor severity style on an unknown severity', () => {
+    const odd: Fix = {
+      ...fixes[1],
+      // Cast through unknown — covers the SEVERITY_STYLES fallback in FixItem.
+      severity: 'wat' as unknown as Fix['severity'],
+    };
+    render(<FixList items={[odd]} />);
+    // The fix title still renders without throwing.
+    expect(screen.getByText(/Tighten your/i)).toBeInTheDocument();
   });
 });

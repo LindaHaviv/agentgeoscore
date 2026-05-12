@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AgentGEOScore sitemap. The SPA's primary route is "/", with the rest
+  generated dynamically per scan (/report/:domain). We list the canonical
+  entry points crawlers should index.
+
+  NOTE: update the host on every <loc> if the production domain changes.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://dist-olcivbch.devinapps.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://dist-olcivbch.devinapps.com/report/stripe.com</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>
