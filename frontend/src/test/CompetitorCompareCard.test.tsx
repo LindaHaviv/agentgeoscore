@@ -132,6 +132,70 @@ describe('CompetitorCompareCard', () => {
     });
   });
 
+  it('renders the cached tag when a competitor row is served from cache', async () => {
+    const cached: CompareResponse = {
+      target: makeRow('stripe.com', 92, 'A', [88, 96, 91]),
+      competitors: [
+        { ...makeRow('square.com', 71, 'B', [60, 78, 73]), cached: true },
+      ],
+    };
+    (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => cached,
+    });
+    render(<CompetitorCompareCard target="stripe.com" />);
+    fireEvent.change(screen.getByLabelText('Competitor 1'), {
+      target: { value: 'square.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Compare/i }));
+    expect(await screen.findByText(/cached/i)).toBeInTheDocument();
+  });
+
+  it('falls back to a competitor row for category labels when the target failed', async () => {
+    const targetFailed: CompareResponse = {
+      target: makeRow('broken.invalid', 0, '?', [0, 0, 0], 'connection refused'),
+      competitors: [makeRow('square.com', 71, 'B', [60, 78, 73])],
+    };
+    (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => targetFailed,
+    });
+    render(<CompetitorCompareCard target="broken.invalid" />);
+    fireEvent.change(screen.getByLabelText('Competitor 1'), {
+      target: { value: 'square.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Compare/i }));
+    // Category labels still render — sourced from the surviving competitor row.
+    expect(await screen.findByText('Agent Access')).toBeInTheDocument();
+    expect(screen.getByText('Discoverability')).toBeInTheDocument();
+  });
+
+  it('renders the D and F grade-color bands for low-scoring competitors', async () => {
+    const lowScores: CompareResponse = {
+      target: makeRow('strong.example', 92, 'A', [88, 96, 91]),
+      competitors: [
+        makeRow('weak.example', 45, 'D', [40, 50, 45]),
+        makeRow('failed.example', 20, 'F', [15, 25, 20]),
+      ],
+    };
+    (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => lowScores,
+    });
+    const { container } = render(<CompetitorCompareCard target="strong.example" />);
+    fireEvent.change(screen.getByLabelText('Competitor 1'), {
+      target: { value: 'weak.example' },
+    });
+    fireEvent.change(screen.getByLabelText('Competitor 2'), {
+      target: { value: 'failed.example' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Compare/i }));
+    await screen.findAllByText('45');
+    // gradeColorForScore drove these — both the d and f bands rendered.
+    expect(container.querySelector('.text-grade-d')).not.toBeNull();
+    expect(container.querySelector('.text-grade-f')).not.toBeNull();
+  });
+
   it('drops blank slots and posts only the filled competitor inputs', async () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValueOnce({

@@ -1,0 +1,19 @@
+{
+  "name": "AgentGEOScore",
+  "short_name": "GEOScore",
+  "description": "Generative Engine Optimization, graded. Score any URL for how well AI agents find, read, and cite your site.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#1C1814",
+  "background_color": "#FAF6EF",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

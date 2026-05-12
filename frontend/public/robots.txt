@@ -1,0 +1,83 @@
+# AgentGEOScore — robots.txt
+#
+# AI crawlers we explicitly welcome. The list mirrors the user-agent
+# tokens published by each vendor; see backend/app/scanners/agent_access.py
+# for the source of truth this site grades others against.
+#
+# NOTE: if the production domain changes, update the Sitemap line below.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Default: open. AgentGEOScore is an open field guide; we want the web
+# to be readable by everything that respects this file.
+User-agent: *
+Allow: /
+
+Sitemap: https://dist-olcivbch.devinapps.com/sitemap.xml

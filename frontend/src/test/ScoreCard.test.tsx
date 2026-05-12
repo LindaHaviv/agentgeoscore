@@ -37,4 +37,5 @@ describe('ScoreCard', () => {
     expect(screen.getByText(/Effectively invisible/i)).toBeInTheDocument();
     expect(screen.getByText(/grade · invisible/i)).toBeInTheDocument();
   });
+
 });

@@ -1,0 +1,40 @@
+# AgentGEOScore
+
+> Generative Engine Optimization, graded. Paste any URL and get a 0–100 score, an A–F letter grade, a 5-category breakdown, and a ranked fix list with copy-pasteable HTML for how well AI agents (ChatGPT, Claude, Gemini, Perplexity, Groq) find, read, and cite your site.
+
+AgentGEOScore is an open-source web tool and FastAPI backend that audits any URL across five evidence-backed categories: Agent Access, Discoverability, Structured Data, Content Clarity, and Citation Probe. It is MIT licensed. No scan results are persisted. There is no signup, no cookies, and no third-party tracking. The Citation Probe queries five LLMs and search engines (Gemini, Mistral, Brave, Duck.ai, Groq llama-3.3-70b) to check whether they actually cite the target domain on category-relevant prompts.
+
+## Core docs
+
+- [Home](https://dist-olcivbch.devinapps.com/): paste a URL, get a report
+- [README](https://github.com/LindaHaviv/agentgeoscore/blob/main/README.md): scoring methodology, scanner internals, how to add a gap
+- [Changelog](https://github.com/LindaHaviv/agentgeoscore/blob/main/CHANGELOG.md): release notes
+- [Security policy](https://github.com/LindaHaviv/agentgeoscore/blob/main/SECURITY.md): threat model, SSRF hardening, vulnerability disclosure
+- [Contributing](https://github.com/LindaHaviv/agentgeoscore/blob/main/README.md#contributing): gap-scanner PR checklist
+- [GitHub repository](https://github.com/LindaHaviv/agentgeoscore): full source
+
+## Research and methodology
+
+- [The GEO paper (Aggarwal et al., 2024)](https://arxiv.org/abs/2311.09735): the Princeton-led benchmark that motivates the content-depth and citability signals
+- [OpenAI bot documentation](https://platform.openai.com/docs/bots): GPTBot, ChatGPT-User, OAI-SearchBot user-agent tokens
+- [Google AI crawlers](https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers): Google-Extended, GoogleOther rules
+- [Schema.org structured data](https://schema.org/): JSON-LD type catalog and Google Rich Results requirements
+
+## API
+
+- POST `https://agentgeoscore-1ei53w.fly.dev/api/scan` — body `{ "url": "...", "include_probe": true }` returns a Report
+- POST `https://agentgeoscore-1ei53w.fly.dev/api/compare` — `{ "target": "...", "competitors": ["..."] }` for side-by-side scoring
+- GET `https://agentgeoscore-1ei53w.fly.dev/api/share/og?d=domain&s=score&g=grade` — dynamic OG share-card PNG
+- Rate limits: 10/min on `/api/scan`, 5/min on `/api/compare`, 30/min on `/api/test-prompts`. Per-IP, slowapi-enforced.
+
+## What we measure
+
+- **Agent Access (25%)** — robots.txt allowlist for AI bot user agents (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot-Extended, Amazonbot, Bytespider, cohere-ai, Meta-ExternalAgent, etc.); HTTPS; redirect cleanliness; explicit AI-bot rule presence vs. wildcard reliance
+- **Discoverability (20%)** — sitemap.xml; canonical URL; homepage TTFB; SPA / JS-rendering risk; multipage depth sample; Core Web Vitals via Google PageSpeed Insights; hreflang return-tag symmetry
+- **Structured Data (20%)** — schema.org JSON-LD presence; rich `@type` coverage (Organization, SoftwareApplication, FAQPage, Article, Product, Person); validator-conformance of required properties per type; OpenGraph; Twitter cards; Person + sameAs E-E-A-T signal
+- **Content Clarity (15%)** — title and meta-description length; exactly one H1; semantic HTML landmarks (header, main, nav, footer, article); heading hierarchy; visible-text density; Princeton GEO 1500–2500-word content-depth band; internal-linking quality
+- **Citation Probe (20%)** — live queries to Gemini, Mistral, Brave Search, Duck.ai, and Groq llama-3.3-70b on category-relevant prompts; checks whether each engine actually cites the target domain
+
+## Roadmap
+
+Open gap-scanner ideas live in GitHub Issues. Contributions follow the gap-PR checklist in CONTRIBUTING: cite the evidence, add a scanner module, register a Fix with severity / effort / score_lift / snippet, mock all HTTP via respx in tests, add the row to the frontend.
