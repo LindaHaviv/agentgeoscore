@@ -176,6 +176,35 @@ describe('TestPromptsCard', () => {
     expect(screen.getAllByText(/B2B SaaS/).length).toBeGreaterThanOrEqual(1);
   });
 
+  it('surfaces an override-error banner when the re-roll fetch fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ detail: 'override exploded' }),
+      }),
+    );
+    render(<TestPromptsCard bundle={bundle} domain="stripe.com" />);
+    fireEvent.change(screen.getByLabelText(/Not right/i), {
+      target: { value: 'b2b-saas' },
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/Couldn.?t re-roll prompts/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/override exploded/)).toBeInTheDocument();
+  });
+
+  it('returns early without fetching when the dropdown is set to the current slug', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    render(<TestPromptsCard bundle={bundle} domain="stripe.com" />);
+    fireEvent.change(screen.getByLabelText(/Not right/i), {
+      target: { value: 'fintech-payments' },
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('surfaces a low-confidence hint to the user', () => {
     const lowConf: TestPromptsBundle = {
       ...bundle,

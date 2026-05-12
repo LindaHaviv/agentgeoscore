@@ -1,0 +1,10 @@
+# AgentGEOScore vulnerability disclosure (RFC 9116)
+#
+# NOTE: when the production domain changes, update Canonical: below.
+
+Contact: mailto:linda.haviv@gmail.com
+Expires: 2027-05-12T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://dist-olcivbch.devinapps.com/.well-known/security.txt
+Policy: https://github.com/LindaHaviv/agentgeoscore/blob/main/SECURITY.md
+Acknowledgments: https://github.com/LindaHaviv/agentgeoscore/blob/main/SECURITY.md
