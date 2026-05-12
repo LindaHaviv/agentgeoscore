@@ -1,0 +1,43 @@
+name: Fly deploy
+
+# Auto-deploys the FastAPI backend to Fly.io on every push to main.
+#
+# The Fly Launch wizard normally commits this file as part of the
+# initial repo setup, but in our case (PR #24) it didn't — so for ~3
+# merges nothing was being shipped to prod and the running container
+# stayed pinned to the very first launch image. Wiring this in
+# explicitly so future merges deploy without manual `fly deploy` runs.
+#
+# Requires repo secret FLY_API_TOKEN (app-scoped deploy token preferred,
+# org/personal also work). Set at:
+#   https://github.com/LindaHaviv/agentgeoscore/settings/secrets/actions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Don't redeploy when only frontend / docs / tests change — backend
+      # image is unchanged and a deploy would just churn machines.
+      - "backend/**"
+      - "Dockerfile"
+      - "fly.toml"
+      - ".github/workflows/fly-deploy.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  # Cancel any in-flight deploy when a newer commit lands so we never
+  # roll an older image on top of a newer one.
+  group: fly-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy backend to Fly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only -a agentgeoscore-1ei53w
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
