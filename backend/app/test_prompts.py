@@ -795,12 +795,17 @@ CATEGORY_DEFS: tuple[CategoryDef, ...] = (
         path_hints=("/portfolio", "/galleries", "/gallery", "/sessions", "/portraits"),
     ),
     CategoryDef(
+        # ``generic`` doubles as the default fallback when no signals are
+        # strong enough to classify a site, *and* as the explicit "my
+        # industry isn't listed" override option in the UI dropdown. Its
+        # label needs to read like both — "this site" alone wasn't an
+        # obvious fallback affordance for users in niche verticals.
         slug="generic",
-        label="this site",
+        label="other / industry not listed",
         descriptor="site",
-        persona="people in your industry",
-        use_case="find what you offer",
-        long_tail_persona="someone evaluating you against alternatives",
+        persona="people looking for what you offer",
+        use_case="find a business like yours",
+        long_tail_persona="someone evaluating you against alternatives in your space",
     ),
 )
 
