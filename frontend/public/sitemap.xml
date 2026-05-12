@@ -6,7 +6,7 @@
 
   NOTE: update the host on every <loc> if the production domain changes.
 -->
-<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://dist-olcivbch.devinapps.com/</loc>
     <changefreq>weekly</changefreq>

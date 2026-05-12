@@ -352,7 +352,8 @@ async def compare(request: Request, req: CompareRequest) -> CompareResponse:
 
 
 @app.get("/api/test-prompts/categories")
-async def test_prompt_categories() -> dict:
+@limiter.limit("60/minute")
+async def test_prompt_categories(request: Request) -> dict:
     """Public list of selectable categories for the override dropdown."""
     return {"categories": list_categories()}
 

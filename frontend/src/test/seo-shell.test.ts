@@ -180,7 +180,7 @@ describe('SEO shell — semantic HTML in pre-React body', () => {
   it('has a visible "Updated …" line (paired with the <time> for full E-E-A-T credit)', () => {
     const text = (doc.body.textContent || '').replace(/\s+/g, ' ');
     expect(text).toMatch(
-      /\b(?:updated|last updated|last modified|modified|published)\b[\s:.\-]*[A-Za-z0-9,\s/-]+/i,
+      /\b(?:updated|last updated|last modified|modified|published)\b[\s:.-]*[A-Za-z0-9,\s/-]+/i,
     );
   });
 });

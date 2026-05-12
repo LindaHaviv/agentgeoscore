@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 import respx
 from fastapi.testclient import TestClient
 from httpx import Response
@@ -13,6 +14,17 @@ from httpx import Response
 from app.main import app
 
 DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
+# CI runs the backend pytest job in parallel with (not after) the frontend
+# build, so frontend/dist/ may not exist when this file is collected. Skip
+# the entire module cleanly in that case — locally the developer runs
+# `npm run build` first and the assertions execute normally.
+if not (DIST / "index.html").exists():
+    pytest.skip(
+        "frontend/dist not built — run `cd frontend && npm run build` first.",
+        allow_module_level=True,
+    )
+
 INDEX = (DIST / "index.html").read_text()
 ROBOTS = (DIST / "robots.txt").read_text()
 SITEMAP = (DIST / "sitemap.xml").read_text()
@@ -44,6 +56,17 @@ def test_self_score_after_deploy(monkeypatch):
     )
     respx.get(f"{BASE}/sitemap.xml").mock(
         return_value=Response(200, text=SITEMAP, headers={"content-type": "application/xml"})
+    )
+    # The static shell now ships demo links like /report/stripe.com. The
+    # multipage scanner samples them; in prod they resolve to the same SPA
+    # shell, so simulate that by serving INDEX for every other internal path
+    # on the host.
+    respx.get(re.compile(rf"^https://{re.escape(HOST)}/.+$")).mock(
+        return_value=Response(
+            200,
+            text=INDEX,
+            headers={"content-type": "text/html; charset=utf-8"},
+        )
     )
 
     client = TestClient(app)
