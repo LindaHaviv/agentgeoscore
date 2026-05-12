@@ -9,7 +9,7 @@
 # This image is consumed by Fly.io's GitHub-launch flow, by ``flyctl
 # deploy``, and by local ``docker build`` for smoke-testing.
 
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 # --- System deps required to build the wheel ecosystem ----------------------
 # ``lxml`` is the only C-extension in our stack that needs system libs.
@@ -42,7 +42,7 @@ RUN uv sync --frozen --no-dev --no-install-project \
     && uv pip install --no-deps .
 
 # --- Runtime image ----------------------------------------------------------
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 # Minimal runtime libs for ``lxml``.
 RUN apt-get update \
