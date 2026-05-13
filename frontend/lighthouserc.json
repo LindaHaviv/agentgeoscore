@@ -15,10 +15,13 @@
         "categories:pwa": "off",
 
         "prioritize-lcp-image": "off",
+        "lcp-lazy-loaded": "off",
         "uses-responsive-images": "off",
         "modern-image-formats": "off",
         "offscreen-images": "off",
         "preload-fonts": "off",
+
+        "non-composited-animations": "off",
 
         "service-worker": "off",
         "installable-manifest": "off",
