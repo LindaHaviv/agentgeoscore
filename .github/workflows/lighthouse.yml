@@ -1,20 +1,26 @@
 name: Lighthouse CI
 
-# Manually-triggered (heavy: full headless Chrome run, ~2 min). Run before
-# launch or after any UI / asset / build-pipeline change. Thresholds are in
-# frontend/lighthouserc.json.
+# Runs on every PR + every push to main, plus manual dispatch as an escape
+# hatch. ~1-2 min extra per PR; the static dist scores predictably so
+# flake risk is low. Thresholds are in frontend/lighthouserc.json — if
+# the site regresses below Perf 85 / A11y 90 / SEO 95 / BP 90, this fails.
 on:
   workflow_dispatch: {}
   pull_request:
-    types: [labeled]
+    branches: [main]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lhci:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-lighthouse'
     name: lighthouse (Perf / A11y / SEO / Best-Practices)
     runs-on: ubuntu-latest
     defaults:
