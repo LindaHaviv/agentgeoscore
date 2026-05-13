@@ -56,14 +56,40 @@ export function rewriteUpdatedDate(
   return out;
 }
 
-/** Build-style helper: rewrite both origin and date in one pass. */
+/**
+ * Rewrite the footer copyright year to the current build year.
+ *
+ * Anchored to a `© YYYY` token immediately followed by an `<a ... rel="author">`
+ * link — that pair is unique to the publisher byline in our footer markup, so
+ * we don't false-positive on, say, a "© 2024 ACME Corp" string inside copy
+ * about a third party. If the byline ever drops the `rel="author"` anchor the
+ * rewrite simply no-ops; nothing else uses this pattern.
+ *
+ * The React footer uses `new Date().getFullYear()` at runtime, so this rewrite
+ * is only for the static SEO-shell footer that AI crawlers see before JS runs.
+ * Keeping the two surfaces in sync is the whole point of this helper.
+ */
+export function rewriteCopyrightYear(content: string, year: string): string {
+  return content.replace(
+    /(©\s+)\d{4}(\s+<a\s+[^>]*?\brel\s*=\s*"[^"]*\bauthor\b)/g,
+    `$1${year}$2`,
+  );
+}
+
+/** Build-style helper: rewrite origin, date, and copyright year in one pass. */
 export function rewriteAll(
   content: string,
   targetOrigin: string,
   isoDate: string,
   humanDate: string,
 ): string {
-  return rewriteUpdatedDate(rewriteOrigin(content, targetOrigin), isoDate, humanDate);
+  // Derive the year from isoDate so callers don't need to pass it explicitly
+  // and the existing call sites + integration tests keep working unchanged.
+  const year = isoDate.slice(0, 4);
+  return rewriteCopyrightYear(
+    rewriteUpdatedDate(rewriteOrigin(content, targetOrigin), isoDate, humanDate),
+    year,
+  );
 }
 
 /** Format today in en-US (locale-stable for CI). */
