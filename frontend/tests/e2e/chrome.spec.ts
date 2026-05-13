@@ -8,7 +8,11 @@ import { expect, test } from '@playwright/test';
 test.describe('header and footer chrome', () => {
   test('header logo links to the homepage', async ({ page }) => {
     await page.goto('/report/stripe.com');
-    const home = page.getByRole('link', { name: /home$/i });
+    // Accessible name comes from the visible wordmark text now that we
+    // dropped aria-label="AgentGEOScore home" (it was lying to screen
+    // readers vs the visible "AgentGEOScore · issue №1" — Lighthouse's
+    // label-content-name-mismatch audit caught it).
+    const home = page.getByRole('link', { name: /Agent.*GEO.*Score/i }).first();
     await expect(home).toHaveAttribute('href', '/');
   });
 
