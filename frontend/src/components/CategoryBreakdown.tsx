@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CategoryResult, CheckResult } from '../types';
 
 const STATUS_STYLES: Record<string, { text: string; icon: string; label: string }> = {
@@ -24,21 +24,47 @@ export function CategoryBreakdown({ categories }: Props) {
   return (
     <div>
       {categories.map((cat, i) => (
-        <CategoryRow key={cat.id} category={cat} last={i === categories.length - 1} />
+        <CategoryRow
+          key={cat.id}
+          category={cat}
+          last={i === categories.length - 1}
+          index={i}
+        />
       ))}
     </div>
   );
 }
 
-function CategoryRow({ category, last }: { category: CategoryResult; last: boolean }) {
+function CategoryRow({
+  category,
+  last,
+  index,
+}: {
+  category: CategoryResult;
+  last: boolean;
+  index: number;
+}) {
   const [open, setOpen] = useState(false);
   const score = category.score;
   const allSkipped =
     category.checks.length > 0 && category.checks.every((c) => c.status === 'skip');
   const bar = gradeColorForScore(score);
 
+  // Animate the score bar from 0 to its target width on mount. The first
+  // paint renders width: 0; a microtask flip to the target width lets the
+  // CSS transition do the actual fill.
+  const targetWidth = allSkipped ? 100 : score;
+  const [barWidth, setBarWidth] = useState(0);
+  useEffect(() => {
+    const id = window.setTimeout(() => setBarWidth(targetWidth), 60 + index * 80);
+    return () => window.clearTimeout(id);
+  }, [targetWidth, index]);
+
   return (
-    <div className={`${last ? '' : 'border-b border-rule'}`}>
+    <div
+      className={`${last ? '' : 'border-b border-rule'} animate-fade-in-up-sm`}
+      style={{ animationDelay: `${index * 70}ms` }}
+    >
       <button
         onClick={() => setOpen(!open)}
         className="w-full py-5 flex items-start gap-3 sm:gap-6 text-left group"
@@ -72,9 +98,9 @@ function CategoryRow({ category, last }: { category: CategoryResult; last: boole
           <div className="flex items-center gap-4">
             <div className="flex-1 h-[3px] bg-ink-200/60 overflow-hidden rounded-full">
               <div
-                className={`h-full transition-all duration-700 ${allSkipped ? 'bg-ink-200' : bar}`}
+                className={`h-full transition-[width] duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${allSkipped ? 'bg-ink-200' : bar}`}
                 style={{
-                  width: allSkipped ? '100%' : `${score}%`,
+                  width: `${barWidth}%`,
                   opacity: allSkipped ? 0.4 : 1,
                 }}
               />
@@ -84,15 +110,24 @@ function CategoryRow({ category, last }: { category: CategoryResult; last: boole
             </span>
           </div>
         </div>
-        <div className="pt-1 w-5 text-ink-400 font-display text-2xl leading-none group-hover:text-ink-900 transition-colors">
-          {open ? '–' : '+'}
+        <div
+          className={`pt-1 w-5 text-ink-400 font-display text-2xl leading-none group-hover:text-ink-900 transition-all duration-300 ${open ? 'rotate-45' : 'rotate-0'}`}
+          aria-hidden
+        >
+          +
         </div>
       </button>
       {open && (
         <div className="pb-6 pl-0 sm:pl-6 border-l-0 sm:border-l border-rule animate-fade-in-up">
           <div className="space-y-4">
-            {category.checks.map((check) => (
-              <CheckItem key={check.id} check={check} />
+            {category.checks.map((check, i) => (
+              <div
+                key={check.id}
+                className="animate-fade-in-up-sm"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                <CheckItem check={check} />
+              </div>
             ))}
           </div>
         </div>

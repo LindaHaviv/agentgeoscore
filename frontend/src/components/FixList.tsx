@@ -52,7 +52,10 @@ function FixItem({ fix, index }: { fix: Fix; index: number }) {
   const s = SEVERITY_STYLES[fix.severity] || SEVERITY_STYLES.minor;
   const [copied, setCopied] = useState(false);
   return (
-    <li className="flex gap-5 sm:gap-7">
+    <li
+      className="flex gap-5 sm:gap-7 animate-fade-in-up-sm"
+      style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
+    >
       <div className="flex-shrink-0 pt-1">
         <div className="font-display text-2xl text-ink-400 tabular-nums leading-none">
           {String(index + 1).padStart(2, '0')}
@@ -99,7 +102,7 @@ function FixItem({ fix, index }: { fix: Fix; index: number }) {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 1600);
                 }}
-                className="kicker !text-[0.6rem] under-dot text-ink-500 hover:text-terra-deep"
+                className="kicker !text-[0.6rem] under-dot text-ink-500 hover:text-terra-deep transition-colors active:scale-[0.97]"
               >
                 {copied ? 'Copied ✓' : 'Copy'}
               </button>

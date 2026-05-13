@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { buildShareUrl, scanUrl } from '../api';
 import { BRAND } from '../brand';
@@ -10,6 +10,7 @@ import { ScanningIndicator } from '../components/ScanningIndicator';
 import { ScoreCard } from '../components/ScoreCard';
 import { TestPromptsCard } from '../components/TestPromptsCard';
 import { URLInput } from '../components/URLInput';
+import { useInView } from '../hooks/useInView';
 import type { Report } from '../types';
 
 export default function ReportPage() {
@@ -72,44 +73,37 @@ export default function ReportPage() {
         <div className="animate-fade-in-up">
           <ScoreCard report={report} />
 
-          <div className="mt-16">
-            <div className="rule mb-8" />
-            <h2 className="kicker mb-6">chapter — the breakdown</h2>
+          <Chapter title="chapter — the breakdown">
             <CategoryBreakdown categories={report.categories} />
-          </div>
+          </Chapter>
 
-          <div className="mt-16">
-            <div className="rule mb-8" />
-            <h2 className="kicker mb-6">
-              chapter — what to fix, in order
-              {' '}
-              <span className="text-ink-300">({report.fixes.length})</span>
-            </h2>
+          <Chapter
+            title={
+              <>
+                chapter — what to fix, in order{' '}
+                <span className="text-ink-300">({report.fixes.length})</span>
+              </>
+            }
+          >
             <FixList items={report.fixes} />
-          </div>
+          </Chapter>
 
           {report.test_prompts && (
-            <div className="mt-16">
-              <div className="rule mb-8" />
-              <h2 className="kicker mb-6">chapter — test it yourself</h2>
+            <Chapter title="chapter — test it yourself">
               <TestPromptsCard
                 bundle={report.test_prompts}
                 domain={report.domain}
               />
-            </div>
+            </Chapter>
           )}
 
-          <div className="mt-16">
-            <div className="rule mb-8" />
-            <h2 className="kicker mb-6">chapter — versus your competitors</h2>
+          <Chapter title="chapter — versus your competitors">
             <CompetitorCompareCard target={report.domain} />
-          </div>
+          </Chapter>
 
-          <div className="mt-16">
-            <div className="rule mb-8" />
-            <h2 className="kicker mb-6">chapter — off-page signals</h2>
+          <Chapter title="chapter — off-page signals">
             <RecommendationsCard />
-          </div>
+          </Chapter>
 
           {report.errors.length > 0 && (
             <div className="mt-10 font-mono text-xs text-ink-400">
@@ -124,6 +118,29 @@ export default function ReportPage() {
         </div>
       )}
     </section>
+  );
+}
+
+function Chapter({ title, children }: { title: ReactNode; children: ReactNode }) {
+  const { ref, shown } = useInView<HTMLDivElement>();
+  return (
+    <div ref={ref} className="mt-16">
+      <div
+        className={`rule mb-8 origin-left ${shown ? 'animate-rule-draw-fast' : 'scale-x-0'}`}
+      />
+      <h2
+        className={`kicker mb-6 ${shown ? 'animate-fade-in-up-sm' : 'opacity-0'}`}
+        style={shown ? { animationDelay: '120ms' } : undefined}
+      >
+        {title}
+      </h2>
+      <div
+        className={shown ? 'animate-fade-in-up' : 'opacity-0'}
+        style={shown ? { animationDelay: '220ms' } : undefined}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -148,7 +165,7 @@ function ShareBar({ report }: { report: Report }) {
             setCopied(true);
             setTimeout(() => setCopied(false), 1800);
           }}
-          className="px-4 py-2 border border-ink-900 text-ink-900 hover:bg-ink-900 hover:text-paper text-sm font-medium font-display tracking-tightish transition-colors"
+          className="px-4 py-2 border border-ink-900 text-ink-900 hover:bg-ink-900 hover:text-paper text-sm font-medium font-display tracking-tightish transition-colors duration-200 active:scale-[0.98] motion-safe:transition-transform"
         >
           {copied ? 'Copied ✓' : 'Copy link'}
         </button>
@@ -156,7 +173,7 @@ function ShareBar({ report }: { report: Report }) {
           href={twitterUrl}
           target="_blank"
           rel="noreferrer"
-          className="px-4 py-2 bg-ink-900 text-paper hover:bg-terra-deep text-sm font-medium font-display tracking-tightish transition-colors"
+          className="px-4 py-2 bg-ink-900 text-paper hover:bg-terra-deep text-sm font-medium font-display tracking-tightish transition-colors duration-200 active:scale-[0.98] motion-safe:transition-transform"
         >
           Post on X
         </a>

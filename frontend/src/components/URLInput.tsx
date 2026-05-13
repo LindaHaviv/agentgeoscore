@@ -19,7 +19,7 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
   return (
     <form onSubmit={handle} className="w-full max-w-2xl mx-auto">
       <div
-        className={`paper-card flex items-stretch overflow-hidden transition-colors focus-within:border-ink-700 ${
+        className={`paper-card flex items-stretch overflow-hidden transition-[border-color,box-shadow] duration-300 focus-within:border-ink-700 focus-within:shadow-[0_1px_0_0_rgba(28,24,20,0.08)] ${
           compact ? 'text-base' : 'text-lg'
         }`}
       >
@@ -45,7 +45,7 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
         <button
           type="submit"
           disabled={disabled || !value.trim()}
-          className={`shrink-0 bg-ink-900 text-paper font-medium font-display tracking-tightish disabled:opacity-30 disabled:cursor-not-allowed hover:bg-terra-deep transition ${
+          className={`shrink-0 bg-ink-900 text-paper font-medium font-display tracking-tightish disabled:opacity-30 disabled:cursor-not-allowed hover:bg-terra-deep transition-colors duration-200 active:scale-[0.98] motion-safe:transition-transform ${
             compact ? 'px-3 sm:px-5 text-sm' : 'px-4 sm:px-7 text-sm sm:text-base'
           }`}
         >
