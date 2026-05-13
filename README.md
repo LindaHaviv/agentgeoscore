@@ -12,7 +12,10 @@
 
 [**Live demo**](https://dist-olcivbch.devinapps.com/) · [**The GEO paper**](https://arxiv.org/abs/2311.09735) · [**Contributing**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**Changelog**](CHANGELOG.md)
 
-<img src="docs/hero-breakdown.png" width="900" alt="AgentGEOScore report breakdown — five-category bar chart for stripe.com showing Agent Access 95, Discoverability 94, Structured Data 93, Content Clarity 75, Citation Probe 21, plus the first ranked fix card 'Link every byline to a real author page'">
+<picture>
+  <source srcset="docs/hero-breakdown.webp" type="image/webp">
+  <img src="docs/hero-breakdown.png" width="900" alt="AgentGEOScore report breakdown — five-category bar chart for stripe.com showing Agent Access 95, Discoverability 94, Structured Data 93, Content Clarity 75, Citation Probe 21, plus the first ranked fix card 'Link every byline to a real author page'">
+</picture>
 
 </div>
 
@@ -204,7 +207,7 @@ All keys are server-side. End users never see, paste, or know about them.
 | frontend | `npm test -- --run`                | Vitest                                    |
 | frontend | `npm run build`                    | Production bundle                         |
 | frontend | `npm run test:e2e`                 | Playwright + axe (auto-starts Vite)       |
-| frontend | `node scripts/capture-hero.mjs`    | Re-capture README hero screenshots from the live demo (set `BASE_URL` to override) |
+| frontend | `node scripts/capture-hero.mjs`    | Re-capture README hero screenshot from the live demo (writes `docs/hero-breakdown.{png,webp}`; set `BASE_URL` to override). One-time setup: `npx playwright install chromium` and optionally `brew install webp`. |
 
 ## Privacy
 
