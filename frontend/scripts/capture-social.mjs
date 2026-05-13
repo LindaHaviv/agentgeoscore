@@ -1,14 +1,16 @@
 /**
- * Capture the GitHub social-preview image (1280 × 640).
+ * Capture the GitHub social-preview image (1280 × 640, GitHub's
+ * recommended size).
  *
  * GitHub renders this for repo links shared to Twitter, Slack,
- * iMessage, LinkedIn, Discord, etc. The 1280×640 (2:1) frame is
- * cropped to ~1200×630 by most platforms — so the meaningful content
- * has to land in the centered 1.91:1 safe area.
+ * iMessage, LinkedIn, Discord. Most platforms further crop it to
+ * ~1.91:1, so the meaningful content has to land in the centered
+ * safe area.
  *
- * Output: docs/social-preview.png (~80–150 KB), uploaded manually via
- *   https://github.com/<owner>/<repo>/settings#repository-social-preview
- *   (the GitHub REST API does not expose this).
+ * Output: docs/social-preview.png (1280 × 640, single shot — no
+ *   downscale step required). Upload manually via
+ *   https://github.com/<owner>/<repo>/settings → "Social preview".
+ *   The REST API does not expose social-preview uploads.
  *
  * Usage:
  *   BASE_URL=https://dist-olcivbch.devinapps.com node scripts/capture-social.mjs
@@ -37,27 +39,34 @@ async function main() {
     throw err;
   }
 
-  // Capture at 2× DPR so the 1280-wide social card renders sharp on
-  // retina previews (Slack and iMessage both upsample).
-  const ctx = await browser.newContext({
-    viewport: { width: 1280, height: 640 },
-    deviceScaleFactor: 2,
-    colorScheme: 'light',
-  });
-  const page = await ctx.newPage();
+  // Single try-finally so the browser is always closed even if the
+  // capture itself throws (anchor missing, network error, etc.) —
+  // otherwise the Chromium process leaks in CI.
+  try {
+    // Capture at native 1280 × 640 (DPR 1) so the output file IS the
+    // final asset. Skipping the intermediate 2× downscale step
+    // keeps the script single-step and matches GitHub's documented
+    // upload size exactly — platforms further downsize for thumbnails.
+    const ctx = await browser.newContext({
+      viewport: { width: 1280, height: 640 },
+      deviceScaleFactor: 1,
+      colorScheme: 'light',
+    });
+    const page = await ctx.newPage();
 
-  await page.goto(`${BASE_URL}/report/${DOMAIN}`, { waitUntil: 'domcontentloaded' });
-  await page.getByTestId('score-number').waitFor({ state: 'visible', timeout: 60_000 });
-  await page.waitForTimeout(800);
+    await page.goto(`${BASE_URL}/report/${DOMAIN}`, { waitUntil: 'domcontentloaded' });
+    await page.getByTestId('score-number').waitFor({ state: 'visible', timeout: 60_000 });
+    await page.waitForTimeout(800);
 
-  // Capture the top 640 px — header + URL input + score card + start
-  // of the breakdown. Forces the viewport-sized clip even if the page
-  // extends below.
-  const pngPath = resolve(DOCS_DIR, 'social-preview-2x.png');
-  await page.screenshot({ path: pngPath, clip: { x: 0, y: 0, width: 1280, height: 640 } });
-
-  await browser.close();
-  console.log(`Wrote ${pngPath} (2560 × 1280 raw — downscale to 1280 × 640 for GitHub)`);
+    const pngPath = resolve(DOCS_DIR, 'social-preview.png');
+    await page.screenshot({
+      path: pngPath,
+      clip: { x: 0, y: 0, width: 1280, height: 640 },
+    });
+    console.log(`Wrote ${pngPath}`);
+  } finally {
+    await browser.close();
+  }
 }
 
 main().catch((err) => {
