@@ -59,7 +59,7 @@ load_dotenv()
 # Frontend origin to redirect humans to from the /share route.
 # Override via FRONTEND_ORIGIN env var in deploy config.
 FRONTEND_ORIGIN = os.environ.get(
-    "FRONTEND_ORIGIN", "https://dist-olcivbch.devinapps.com"
+    "FRONTEND_ORIGIN", "https://agentgeoscore.com"
 ).rstrip("/")
 
 # Public backend origin used when composing absolute URLs in crawler-facing

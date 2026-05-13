@@ -85,7 +85,7 @@ export default defineConfig({
         timeout: 60_000,
         env: {
           VITE_API_BASE:
-            process.env.VITE_API_BASE ?? 'https://agentgeoscore-1ei53w.fly.dev',
+            process.env.VITE_API_BASE ?? 'https://api.agentgeoscore.com',
         },
       },
 });
