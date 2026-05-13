@@ -75,7 +75,11 @@ test.describe('agentgeoscore smoke (mocked)', () => {
     await page.goto('/report/stripe.com');
 
     // Card title + detected category appear.
-    await expect(page.getByRole('heading', { name: /test it yourself/i })).toBeVisible();
+    // (Scope to level 3: the new section anchor in ReportPage is an h2
+    // "chapter — test it yourself" which also matches the regex.)
+    await expect(
+      page.getByRole('heading', { level: 3, name: /test it yourself/i }),
+    ).toBeVisible();
     await expect(page.getByText(/payments \/ fintech/i).first()).toBeVisible();
 
     // The four prompt angles are all rendered.
