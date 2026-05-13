@@ -60,6 +60,7 @@ export default function App() {
               <a
                 href="https://github.com/LindaHaviv"
                 rel="author noopener"
+                target="_blank"
                 className="under-dot"
               >
                 Linda Vivah
