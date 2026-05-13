@@ -50,15 +50,16 @@ function CategoryRow({
     category.checks.length > 0 && category.checks.every((c) => c.status === 'skip');
   const bar = gradeColorForScore(score);
 
-  // Animate the score bar from 0 to its target width on mount. The first
-  // paint renders width: 0; a microtask flip to the target width lets the
-  // CSS transition do the actual fill.
+  // Animate the score bar from 0 to its target width on mount. First paint
+  // renders width: 0; one rAF later we flip to the target so the CSS
+  // transition runs. Per-row stagger is handled by transition-delay below,
+  // not by JS timers, so all rows share a single rAF tick.
   const targetWidth = allSkipped ? 100 : score;
-  const [barWidth, setBarWidth] = useState(0);
+  const [filled, setFilled] = useState(false);
   useEffect(() => {
-    const id = window.setTimeout(() => setBarWidth(targetWidth), 60 + index * 80);
-    return () => window.clearTimeout(id);
-  }, [targetWidth, index]);
+    const id = requestAnimationFrame(() => setFilled(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   return (
     <div
@@ -100,7 +101,8 @@ function CategoryRow({
               <div
                 className={`h-full transition-[width] duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${allSkipped ? 'bg-ink-200' : bar}`}
                 style={{
-                  width: `${barWidth}%`,
+                  width: filled ? `${targetWidth}%` : '0%',
+                  transitionDelay: `${index * 80}ms`,
                   opacity: allSkipped ? 0.4 : 1,
                 }}
               />

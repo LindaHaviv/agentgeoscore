@@ -141,12 +141,12 @@ function Chapter({
   desc: string;
   index: number;
 }) {
-  const ref = useInView<HTMLDivElement>();
+  const { ref, shown } = useInView<HTMLDivElement>();
   return (
     <div
-      ref={ref.ref}
-      className={`flex gap-5 ${ref.shown ? 'animate-fade-in-up-sm' : 'opacity-0'}`}
-      style={ref.shown ? { animationDelay: `${index * 60}ms` } : undefined}
+      ref={ref}
+      className={`flex gap-5 ${shown ? 'animate-fade-in-up-sm' : 'opacity-0'}`}
+      style={shown ? { animationDelay: `${index * 60}ms` } : undefined}
     >
       <div className="font-display text-3xl text-ink-400 leading-none pt-0.5">{num}.</div>
       <div className="flex-1">

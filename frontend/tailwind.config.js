@@ -50,7 +50,6 @@ export default {
         'rule-draw': 'rule-draw 800ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both',
         'rule-draw-fast': 'rule-draw 600ms cubic-bezier(0.22, 1, 0.36, 1) both',
         'dot-pulse': 'dot-pulse 1.6s ease-in-out infinite',
-        'bar-fill': 'bar-fill 900ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both',
       },
       keyframes: {
         'score-in': {
@@ -77,10 +76,6 @@ export default {
         'dot-pulse': {
           '0%, 100%': { opacity: '0.25' },
           '50%': { opacity: '1' },
-        },
-        'bar-fill': {
-          '0%': { transform: 'scaleX(0)' },
-          '100%': { transform: 'scaleX(var(--bar-target, 1))' },
         },
       },
     },
