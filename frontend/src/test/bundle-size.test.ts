@@ -37,12 +37,14 @@ function distExists(): boolean {
   }
 }
 
+// NOTE: `describe.skipIf` only skips the test bodies — the describe callback
+// itself still runs at registration time. Keep the directory-listing call
+// inside each `it()` body so vitest never touches dist/ when skipped (CI
+// runs vitest BEFORE the build step, so dist/ doesn't exist there).
 describe.skipIf(!distExists())('bundle-size budget', () => {
-  const files = readdirSync(DIST_ASSETS);
-  const mainJs = files.find((f) => /^index-.*\.js$/.test(f));
-  const mainCss = files.find((f) => /^index-.*\.css$/.test(f));
-
   it(`main JS chunk gzip stays under ${MAIN_JS_GZIP_BUDGET_KB} KB`, () => {
+    const files = readdirSync(DIST_ASSETS);
+    const mainJs = files.find((f) => /^index-.*\.js$/.test(f));
     expect(mainJs, 'no index-*.js in dist/assets — build broken?').toBeDefined();
     const sizeKb = gzipSizeKb(resolve(DIST_ASSETS, mainJs!));
     expect(
@@ -53,6 +55,8 @@ describe.skipIf(!distExists())('bundle-size budget', () => {
   });
 
   it(`main CSS gzip stays under ${MAIN_CSS_GZIP_BUDGET_KB} KB`, () => {
+    const files = readdirSync(DIST_ASSETS);
+    const mainCss = files.find((f) => /^index-.*\.css$/.test(f));
     expect(mainCss, 'no index-*.css in dist/assets — build broken?').toBeDefined();
     const sizeKb = gzipSizeKb(resolve(DIST_ASSETS, mainCss!));
     expect(
