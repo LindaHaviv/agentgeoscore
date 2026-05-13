@@ -85,6 +85,50 @@ validity. The companion backend test
 pipeline against the rebuilt `dist/` and asserts the four addressable
 categories all score 100. Both must stay green.
 
+## Production domain (env-driven cutover)
+
+The static SEO shell, `robots.txt`, `sitemap.xml`, `llms.txt`, and
+`.well-known/security.txt` reference a production frontend origin. Source
+files keep `https://dist-olcivbch.devinapps.com` as the literal default;
+the Vite build pipeline rewrites every occurrence to the value of
+`VITE_FRONTEND_ORIGIN` (see `frontend/vite.config.ts`).
+
+To cut over to a new domain:
+
+```bash
+VITE_FRONTEND_ORIGIN=https://your-domain.com npm run build
+```
+
+Or set the env var permanently in your deploy environment. The build also
+rewrites the "Updated YYYY-MM-DD" freshness signal to today's date so
+the static shell never advertises a stale date.
+
+## Pre-PR checks
+
+Before opening a PR, run the full gate suite locally:
+
+```bash
+# Backend
+cd backend && uv run --extra dev pytest -q && uv run --extra dev ruff check .
+
+# Frontend
+cd frontend && npm run typecheck && npm run lint && npm test -- --run \
+  && npm run build && npm run validate-html
+
+# Gate script (mirrors what CI runs)
+./.github/scripts/check-gates.sh
+```
+
+CI runs the same checks plus the Playwright e2e suite and the
+`web-pr-review` gates job (xmllint on sitemap.xml, html-validate on the
+built HTML, security.txt RFC 9116 compliance, predict-self-score against
+the rebuilt dist).
+
+If you're using Claude Code, Codex, or Cursor with the `web-pr-review`
+skill installed, ask for `/web-pr-review` (or "review my PR") and the
+orchestrator will run the same gates plus a parallel review-swarm pass
+across intent / security / performance / contracts.
+
 ## Opening a PR
 
 - Branch from `main`. Use a short descriptive name (e.g.

@@ -52,11 +52,24 @@ function renderAt(domain: string) {
 }
 
 describe('ReportPage', () => {
+  // Snapshot navigator.clipboard before any test mutates it so we can restore
+  // it after the suite. `Object.assign(navigator, …)` from the copy-link test
+  // permanently mutates the property, and `vi.unstubAllGlobals` doesn't undo
+  // non-stubbed assignments — without this restore the clipboard mock would
+  // leak into adjacent test files run later in the same Vitest session.
+  const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
   });
   afterEach(() => {
     vi.unstubAllGlobals();
+    if (originalClipboard) {
+      Object.defineProperty(navigator, 'clipboard', originalClipboard);
+    } else {
+      // @ts-expect-error: navigator.clipboard didn't exist before; remove it.
+      delete (navigator as Navigator & { clipboard?: unknown }).clipboard;
+    }
   });
 
   it('shows the scanning indicator while the scan is in flight', () => {
@@ -203,7 +216,13 @@ describe('ReportPage', () => {
       json: async () => report,
     });
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+    // Override clipboard via defineProperty so the afterEach restore works
+    // — Object.assign would mutate a getter-only slot in some envs.
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+      writable: true,
+    });
 
     renderAt('stripe.com');
     await waitFor(() => {
