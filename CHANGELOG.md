@@ -5,6 +5,19 @@ loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Production domain cut over to `agentgeoscore.com`** (frontend, Cloudflare Pages) + `api.agentgeoscore.com` (backend, Fly). The legacy `dist-olcivbch.devinapps.com` preview URL is gone from the codebase entirely. (#45)
+- Build-time guard in `vite.config.ts` now throws if either `VITE_FRONTEND_ORIGIN` or `VITE_API_BASE` is missing on production builds — protects against silent same-origin-fetch failures when host env vars aren't set. (#45)
+- CORS allowlist default now includes `https://www.agentgeoscore.com` so the `www` subdomain isn't rejected. (#45)
+
+### Added
+
+- `og:image:secure_url` meta paired with `og:image` for Facebook OG Debugger hygiene. (#45)
+- `frontend/vite-plugins/origin-and-freshness.ts` — new `DEFAULT_API_BASE` + `rewriteApiBase` helper. The OG image / Twitter image / SoftwareApplication JSON-LD `image` URLs in `index.html` are now rewritten at build time via `VITE_API_BASE`, matching how the frontend origin is already rewritten via `VITE_FRONTEND_ORIGIN`. (#45)
+- `scripts/precheck-cutover.sh` — pre-merge gate script. Runs DNS resolution, TLS/reachability, OG endpoint (content-type + size + 1200×630 dimension check), and `/share` HTML validation. Exits non-zero if any prod endpoint fails its check — meant to catch the deploy-ordering hazard where DNS / Fly cert / OG endpoint aren't all live yet. (#45)
+- `frontend/src/test/no-legacy-urls.test.ts` — regression guard that `git grep`s tracked source files for the legacy preview URL. Prevents accidental reintroduction. (#45)
+
 ## [0.1.0] – 2026-05-10 — Initial public release
 
 This is the version that shipped to https://agentgeoscore.com/
