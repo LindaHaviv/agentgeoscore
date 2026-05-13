@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { staggerDelay } from '../animation';
 import type { Fix } from '../types';
 
 const SEVERITY_STYLES: Record<
@@ -54,7 +55,7 @@ function FixItem({ fix, index }: { fix: Fix; index: number }) {
   return (
     <li
       className="flex gap-5 sm:gap-7 animate-fade-in-up-sm"
-      style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
+      style={{ animationDelay: `${staggerDelay(index)}ms` }}
     >
       <div className="flex-shrink-0 pt-1">
         <div className="font-display text-2xl text-ink-400 tabular-nums leading-none">

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { URLInput } from '../components/URLInput';
 import { normalizeDomain } from '../api';
+import { staggerDelay } from '../animation';
 import { useInView } from '../hooks/useInView';
 
 export default function HomePage() {
@@ -146,7 +147,7 @@ function Chapter({
     <div
       ref={ref}
       className={`flex gap-5 ${shown ? 'animate-fade-in-up-sm' : 'opacity-0'}`}
-      style={shown ? { animationDelay: `${index * 60}ms` } : undefined}
+      style={shown ? { animationDelay: `${staggerDelay(index, 60)}ms` } : undefined}
     >
       <div className="font-display text-3xl text-ink-400 leading-none pt-0.5">{num}.</div>
       <div className="flex-1">

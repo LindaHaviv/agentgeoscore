@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { CHAPTER_BODY_DELAY_MS, CHAPTER_HEADING_DELAY_MS } from '../animation';
 import { buildShareUrl, scanUrl } from '../api';
 import { BRAND } from '../brand';
 import { CategoryBreakdown } from '../components/CategoryBreakdown';
@@ -70,7 +71,7 @@ export default function ReportPage() {
       )}
 
       {report && !loading && (
-        <div className="animate-fade-in-up">
+        <div>
           <ScoreCard report={report} />
 
           <Chapter title="chapter — the breakdown">
@@ -130,13 +131,13 @@ function Chapter({ title, children }: { title: ReactNode; children: ReactNode })
       />
       <h2
         className={`kicker mb-6 ${shown ? 'animate-fade-in-up-sm' : 'opacity-0'}`}
-        style={shown ? { animationDelay: '120ms' } : undefined}
+        style={shown ? { animationDelay: `${CHAPTER_HEADING_DELAY_MS}ms` } : undefined}
       >
         {title}
       </h2>
       <div
         className={shown ? 'animate-fade-in-up' : 'opacity-0'}
-        style={shown ? { animationDelay: '220ms' } : undefined}
+        style={shown ? { animationDelay: `${CHAPTER_BODY_DELAY_MS}ms` } : undefined}
       >
         {children}
       </div>
