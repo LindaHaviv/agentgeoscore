@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { STAGGER_STEP_MS, staggerDelay } from '../animation';
 import type { CategoryResult, CheckResult } from '../types';
 
 const STATUS_STYLES: Record<string, { text: string; icon: string; label: string }> = {
@@ -21,26 +22,59 @@ interface Props {
 }
 
 export function CategoryBreakdown({ categories }: Props) {
+  // One mount-time rAF shared across all rows: first paint renders each bar
+  // at scaleX(0), one frame later we flip to scaleX(target) so the CSS
+  // transition runs. transition-delay (set per row) handles the stagger,
+  // so a single state flip drives the whole cascade.
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setFilled(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <div>
       {categories.map((cat, i) => (
-        <CategoryRow key={cat.id} category={cat} last={i === categories.length - 1} />
+        <CategoryRow
+          key={cat.id}
+          category={cat}
+          last={i === categories.length - 1}
+          index={i}
+          filled={filled}
+        />
       ))}
     </div>
   );
 }
 
-function CategoryRow({ category, last }: { category: CategoryResult; last: boolean }) {
+function CategoryRow({
+  category,
+  last,
+  index,
+  filled,
+}: {
+  category: CategoryResult;
+  last: boolean;
+  index: number;
+  filled: boolean;
+}) {
   const [open, setOpen] = useState(false);
+  const panelId = useId();
   const score = category.score;
   const allSkipped =
     category.checks.length > 0 && category.checks.every((c) => c.status === 'skip');
   const bar = gradeColorForScore(score);
+  const targetScale = (allSkipped ? 100 : score) / 100;
 
   return (
-    <div className={`${last ? '' : 'border-b border-rule'}`}>
+    <div
+      className={`${last ? '' : 'border-b border-rule'} animate-fade-in-up-sm`}
+      style={{ animationDelay: `${staggerDelay(index)}ms` }}
+    >
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={panelId}
         className="w-full py-5 flex items-start gap-3 sm:gap-6 text-left group"
       >
         <div className="flex-1 min-w-0">
@@ -72,9 +106,10 @@ function CategoryRow({ category, last }: { category: CategoryResult; last: boole
           <div className="flex items-center gap-4">
             <div className="flex-1 h-[3px] bg-ink-200/60 overflow-hidden rounded-full">
               <div
-                className={`h-full transition-all duration-700 ${allSkipped ? 'bg-ink-200' : bar}`}
+                className={`h-full w-full origin-left transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${allSkipped ? 'bg-ink-200' : bar}`}
                 style={{
-                  width: allSkipped ? '100%' : `${score}%`,
+                  transform: `scaleX(${filled ? targetScale : 0})`,
+                  transitionDelay: `${staggerDelay(index, STAGGER_STEP_MS + 10)}ms`,
                   opacity: allSkipped ? 0.4 : 1,
                 }}
               />
@@ -84,15 +119,27 @@ function CategoryRow({ category, last }: { category: CategoryResult; last: boole
             </span>
           </div>
         </div>
-        <div className="pt-1 w-5 text-ink-400 font-display text-2xl leading-none group-hover:text-ink-900 transition-colors">
-          {open ? '–' : '+'}
+        <div
+          className={`pt-1 w-5 text-ink-400 font-display text-2xl leading-none group-hover:text-ink-900 transition-transform duration-300 ${open ? 'rotate-45' : 'rotate-0'}`}
+          aria-hidden
+        >
+          +
         </div>
       </button>
       {open && (
-        <div className="pb-6 pl-0 sm:pl-6 border-l-0 sm:border-l border-rule animate-fade-in-up">
+        <div
+          id={panelId}
+          className="pb-6 pl-0 sm:pl-6 border-l-0 sm:border-l border-rule animate-fade-in-up"
+        >
           <div className="space-y-4">
-            {category.checks.map((check) => (
-              <CheckItem key={check.id} check={check} />
+            {category.checks.map((check, i) => (
+              <div
+                key={check.id}
+                className="animate-fade-in-up-sm"
+                style={{ animationDelay: `${staggerDelay(i, 50)}ms` }}
+              >
+                <CheckItem check={check} />
+              </div>
             ))}
           </div>
         </div>
