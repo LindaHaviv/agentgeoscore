@@ -1,10 +1,62 @@
+<div align="center">
+
 # AgentGEOScore
 
-> Generative Engine Optimization — score & grade any site for AI-agent visibility.
+**Generative Engine Optimization — score & grade any site for AI-agent visibility.**
 
-![AgentGEOScore report breakdown — 80/B for stripe.com showing all five scoring categories](docs/hero-breakdown.png)
+[![CI](https://github.com/LindaHaviv/agentgeoscore/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LindaHaviv/agentgeoscore/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Backend tests](https://img.shields.io/badge/backend_tests-605_passing-success)](backend/tests)
+[![Frontend tests](https://img.shields.io/badge/frontend_tests-134_passing-success)](frontend/src/test)
+[![Code of Conduct](https://img.shields.io/badge/contributor_covenant-2.1-purple.svg)](CODE_OF_CONDUCT.md)
 
-[Live demo](https://dist-olcivbch.devinapps.com/) · [The GEO paper](https://arxiv.org/abs/2311.09735) · [Hardening](#hardening) · [Contributing](#contributing) · [Changelog](CHANGELOG.md) · [Security](SECURITY.md)
+[**Live demo**](https://dist-olcivbch.devinapps.com/) · [**The GEO paper**](https://arxiv.org/abs/2311.09735) · [**Contributing**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**Changelog**](CHANGELOG.md)
+
+<picture>
+  <source srcset="docs/hero-breakdown.webp" type="image/webp">
+  <img src="docs/hero-breakdown.png" width="900" alt="AgentGEOScore report breakdown — five-category bar chart for stripe.com showing Agent Access 95, Discoverability 94, Structured Data 93, Content Clarity 75, Citation Probe 21, plus the first ranked fix card 'Link every byline to a real author page'">
+</picture>
+
+</div>
+
+---
+
+## Contents
+
+- [Why GEO?](#why-geo)
+- [What's actually measured](#whats-actually-measured)
+- [Architecture](#architecture)
+- [Stack](#stack)
+- [Project layout](#project-layout)
+- [Getting started](#getting-started)
+- [Optional API keys](#optional-api-keys)
+- [Scripts](#scripts)
+- [Privacy](#privacy)
+- [Hardening](#hardening)
+- [Contributing](#contributing)
+- [Security](#security)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+
+---
+
+## Why GEO?
+
+Search is moving from blue links to synthesized answers. When someone asks ChatGPT "what should I use for payments?", they don't see a SERP — they see one or two paragraphs with a handful of cited sources. If your site isn't in that synthesis, it doesn't exist for that user, no matter how it ranks in Google.
+
+**The rules of being citable by an LLM are not the rules of being ranked by Google.** They overlap, but they aren't the same:
+
+- AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, …) need to be explicitly allowed — `User-agent: *` is not enough.
+- Most agents don't execute JavaScript. A polished SPA shell with empty `<div id="root">` is invisible to them.
+- LLMs heavily prefer pages with rich structured data — JSON-LD `Organization`, `Article`, `FAQPage`, `Product` — and clean semantic HTML.
+- Citability comes from authority signals an LLM can verify in seconds: a clear author byline that links to a real `/about` page, ≥1500 words on the topic, schema.org coverage, and inbound mentions from sites the model already trusts.
+
+AgentGEOScore is the field-study toolkit for this — paste a URL, get a graded report, ship the fixes, verify with real prompts to real models.
+
+Built on top of the [Princeton GEO benchmark](https://arxiv.org/abs/2311.09735) (Aggarwal et al., 2024), with eight additional gap scanners shipped on top.
+
+## What's actually measured
 
 Paste a URL, get:
 
@@ -15,14 +67,8 @@ Paste a URL, get:
 - **AI-search test prompts** auto-generated for the site's category, with deep-links to ChatGPT / Perplexity / Claude / Google AI Mode (so you can verify visibility in the field, not just on paper)
 - a **dynamic OG share card** for every report
 
-GEO is what SEO becomes when the readers are LLMs. This is the field study and the toolkit that came out of it.
-
-**Live**: https://dist-olcivbch.devinapps.com/
-**Backend**: https://agentgeoscore-1ei53w.fly.dev (Fly.io, region `ams`, auto-stops idle machines)
-
----
-
-## What's actually measured
+**Live**: <https://dist-olcivbch.devinapps.com/>
+**Backend**: <https://agentgeoscore-1ei53w.fly.dev> (Fly.io, region `ams`, auto-stops idle machines)
 
 The score blends 5 weighted categories (40 individual checks). Each check is grounded in a citation from the AI-search literature or a documented platform behavior — none of it is vibes.
 
@@ -47,12 +93,36 @@ The newer signals (in **bold** above) shipped as eight evidence-backed gap PRs:
 7. **Core Web Vitals** — Google PageSpeed Insights API integration
 8. **hreflang / i18n** — return-tag pairs, x-default presence, language-tag validity
 
+## Architecture
+
+```mermaid
+flowchart LR
+    U[User] -->|paste URL| FE[Vite + React SPA]
+    FE -->|POST /api/scan| BE[FastAPI backend]
+    BE --> SSRF[SSRF guard<br/>private/loopback/CGNAT block]
+    SSRF --> F[httpx fetcher<br/>5 MiB cap, 5 redirects]
+    F --> S1[agent_access]
+    F --> S2[discoverability]
+    F --> S3[structured_data]
+    F --> S4[content_clarity]
+    F --> P[probes:<br/>gemini · mistral · brave<br/>duck.ai · groq · pagespeed]
+    S1 --> SC[scoring + fix ranker]
+    S2 --> SC
+    S3 --> SC
+    S4 --> SC
+    P --> SC
+    SC -->|Report JSON| FE
+    FE --> RC[ScoreCard +<br/>CategoryBreakdown +<br/>FixList + TestPromptsCard]
+```
+
+Every outbound URL is SSRF-guarded, every endpoint is rate-limited, every response carries HSTS + CSP + nosniff + frame-ancestors. See [Hardening](#hardening) for the threat-model summary or [`SECURITY.md`](SECURITY.md) for the full one.
+
 ## Stack
 
 - **Backend**: FastAPI + httpx, typed with Pydantic. Managed with [`uv`](https://docs.astral.sh/uv/).
 - **Frontend**: Vite + React + TypeScript + Tailwind.
-- **Tests**: `pytest` + `respx` (backend, 605 tests, 95% line coverage), `vitest` + `@testing-library/react` (frontend unit, 115 tests, ~100% on action code), Playwright + `@axe-core/playwright` (e2e + a11y across desktop / tablet / mobile viewports).
-- **CI**: GitHub Actions — lint, typecheck, unit, build, e2e.
+- **Tests**: `pytest` + `respx` (backend, 605 tests, 95% line coverage), `vitest` + `@testing-library/react` (frontend unit, 134 tests, ~100% on action code), Playwright + `@axe-core/playwright` (e2e + a11y across desktop / tablet / mobile viewports).
+- **CI**: GitHub Actions — lint, typecheck, unit, build, e2e, Lighthouse, custom web-gates.
 - **Deploy**: Backend → Fly.io (auto-deploys on push to `main` from `Dockerfile`). Frontend → static bundle on devinapps.com (S3).
 
 ## Project layout
@@ -137,6 +207,7 @@ All keys are server-side. End users never see, paste, or know about them.
 | frontend | `npm test -- --run`                | Vitest                                    |
 | frontend | `npm run build`                    | Production bundle                         |
 | frontend | `npm run test:e2e`                 | Playwright + axe (auto-starts Vite)       |
+| frontend | `node scripts/capture-hero.mjs`    | Re-capture README hero screenshot from the live demo (writes `docs/hero-breakdown.{png,webp}`; set `BASE_URL` to override). One-time setup: `npx playwright install chromium` and optionally `brew install webp`. |
 
 ## Privacy
 
@@ -161,9 +232,7 @@ See [`SECURITY.md`](SECURITY.md) for the full threat model, known limitations (D
 
 ## Contributing
 
-PRs welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full checklist
-— gap-scanner template, category-lexicon rules, SEO-shell regression
-guards, and operational notes.
+PRs welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full checklist — gap-scanner template, category-lexicon rules, SEO-shell regression guards, and operational notes.
 
 ## Security
 

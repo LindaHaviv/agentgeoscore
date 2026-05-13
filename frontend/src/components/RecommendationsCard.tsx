@@ -73,7 +73,7 @@ export function RecommendationsCard() {
               {rec.title}
             </h4>
             <p className="text-ink-700 text-sm leading-relaxed">{rec.body}</p>
-            <p className="text-ink-400 text-xs leading-relaxed mt-2 font-mono">
+            <p className="text-ink-500 text-xs leading-relaxed mt-2 font-mono">
               {rec.evidence}
             </p>
           </li>
