@@ -9,7 +9,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <header className="px-6 sm:px-10 pt-8 pb-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-baseline gap-1 group" aria-label={`${BRAND.name} home`}>
+          <Link to="/" className="flex items-baseline gap-1 group">
             <span className="font-display text-[1.55rem] text-ink-900 leading-none">
               Agent<span className="font-display-italic text-terra">GEO</span>Score
             </span>

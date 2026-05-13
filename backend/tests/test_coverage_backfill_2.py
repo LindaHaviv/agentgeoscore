@@ -4,7 +4,6 @@ response-speed bands, hreflang edge HTML, content_clarity edges, scoring guards.
 from __future__ import annotations
 
 import httpx
-import pytest
 import respx
 from httpx import Response
 
@@ -16,7 +15,6 @@ from app.scanners.discoverability import check_discoverability
 from app.scanners.hreflang import check_hreflang
 from app.scanners.js_rendering import _summarize_fingerprints, check_js_rendering
 from app.targets import WebsiteTarget
-
 
 # ─── js_rendering framework labeller ────────────────────────────────────────
 

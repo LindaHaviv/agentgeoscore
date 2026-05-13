@@ -6,8 +6,6 @@ documentation.
 """
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
-
 import httpx
 import pytest
 import respx
@@ -39,9 +37,7 @@ from app.scanners.citability import (
     _sameas_count,
     check_citability,
 )
-from app.scanners.structured_data import _check_jsonld_validity
 from app.scoring import grade_for, overall_score, score_category
-
 
 # ─── main.py sanitizers + unwrap helpers ────────────────────────────────────
 

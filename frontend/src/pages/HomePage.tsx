@@ -61,7 +61,7 @@ export default function HomePage() {
 
       <div className="max-w-4xl mx-auto">
         <div className="rule mb-10" />
-        <div className="kicker mb-8">what we measure</div>
+        <h2 className="kicker mb-8">what we measure</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-10">
           <Chapter
             num="I"

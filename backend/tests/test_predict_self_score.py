@@ -88,10 +88,13 @@ def test_self_score_after_deploy(monkeypatch):
     else:
         print("\nNo remaining fixes — perfect score.")
 
-    # Hard assertions: every addressable category should clear 90.
+    # Hard assertions: every addressable category should clear 95.
+    # Actual scores on the rebuilt dist are 100/100/100/96/99, so each
+    # threshold has a healthy margin while still matching the docstring's
+    # "all four addressable categories clear 95+" promise.
     cats = {c["id"]: c["score"] for c in r["categories"]}
-    assert cats["agent_access"] >= 90, cats
-    assert cats["discoverability"] >= 80, cats  # response_speed depends on host
+    assert cats["agent_access"] >= 95, cats
+    assert cats["discoverability"] >= 95, cats
     assert cats["structured_data"] >= 95, cats
     assert cats["content_clarity"] >= 95, cats
-    assert r["score"] >= 90, r["score"]
+    assert r["score"] >= 95, r["score"]
