@@ -53,6 +53,13 @@ jobs:
       - name: vitest
         run: npm test -- --run
       - name: build
+        # The Vite plugin's production-build assertion (added in #45)
+        # requires both vars on any NODE_ENV=production build. CI's
+        # built artifact matches what Cloudflare Pages would produce
+        # with the same env vars configured on the Pages project.
+        env:
+          VITE_FRONTEND_ORIGIN: https://agentgeoscore.com
+          VITE_API_BASE: https://api.agentgeoscore.com
         run: npm run build
       - name: validate built HTML
         run: npm run validate-html

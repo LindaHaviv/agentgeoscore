@@ -15,7 +15,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 const DIST_ASSETS = resolve(__dirname, '..', '..', 'dist', 'assets');
 
@@ -37,10 +37,18 @@ function distExists(): boolean {
   }
 }
 
+// `describe.skipIf` skips the registration of hooks AND tests, so a
+// `beforeAll` inside the skipped describe never fires — meaning the
+// readdirSync below is safe even when dist/ is missing in CI.
 describe.skipIf(!distExists())('bundle-size budget', () => {
-  const files = readdirSync(DIST_ASSETS);
-  const mainJs = files.find((f) => /^index-.*\.js$/.test(f));
-  const mainCss = files.find((f) => /^index-.*\.css$/.test(f));
+  let mainJs: string | undefined;
+  let mainCss: string | undefined;
+
+  beforeAll(() => {
+    const files = readdirSync(DIST_ASSETS);
+    mainJs = files.find((f) => /^index-.*\.js$/.test(f));
+    mainCss = files.find((f) => /^index-.*\.css$/.test(f));
+  });
 
   it(`main JS chunk gzip stays under ${MAIN_JS_GZIP_BUDGET_KB} KB`, () => {
     expect(mainJs, 'no index-*.js in dist/assets — build broken?').toBeDefined();
