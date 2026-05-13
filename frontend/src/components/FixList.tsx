@@ -102,7 +102,7 @@ function FixItem({ fix, index }: { fix: Fix; index: number }) {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 1600);
                 }}
-                className="kicker !text-[0.6rem] under-dot text-ink-500 hover:text-terra-deep transition-colors active:scale-[0.97]"
+                className="kicker !text-[0.6rem] under-dot text-ink-500 hover:text-terra-deep transition-[color,transform] duration-200 active:scale-[0.97]"
               >
                 {copied ? 'Copied ✓' : 'Copy'}
               </button>

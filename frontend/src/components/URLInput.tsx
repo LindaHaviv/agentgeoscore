@@ -45,7 +45,7 @@ export function URLInput({ onSubmit, disabled, initial = '', compact = false }: 
         <button
           type="submit"
           disabled={disabled || !value.trim()}
-          className={`shrink-0 bg-ink-900 text-paper font-medium font-display tracking-tightish disabled:opacity-30 disabled:cursor-not-allowed hover:bg-terra-deep transition-colors duration-200 active:scale-[0.98] motion-safe:transition-transform ${
+          className={`shrink-0 bg-ink-900 text-paper font-medium font-display tracking-tightish disabled:opacity-30 disabled:cursor-not-allowed hover:bg-terra-deep transition-[color,background-color,border-color,transform] duration-200 active:scale-[0.98] ${
             compact ? 'px-3 sm:px-5 text-sm' : 'px-4 sm:px-7 text-sm sm:text-base'
           }`}
         >
