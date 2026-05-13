@@ -7,10 +7,10 @@
 [![CI](https://github.com/LindaHaviv/agentgeoscore/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LindaHaviv/agentgeoscore/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Backend tests](https://img.shields.io/badge/backend_tests-605_passing-success)](backend/tests)
-[![Frontend tests](https://img.shields.io/badge/frontend_tests-134_passing-success)](frontend/src/test)
+[![Frontend tests](https://img.shields.io/badge/frontend_tests-152_passing-success)](frontend/src/test)
 [![Code of Conduct](https://img.shields.io/badge/contributor_covenant-2.1-purple.svg)](CODE_OF_CONDUCT.md)
 
-[**Live demo**](https://dist-olcivbch.devinapps.com/) · [**The GEO paper**](https://arxiv.org/abs/2311.09735) · [**Contributing**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**Changelog**](CHANGELOG.md)
+[**Live demo**](https://agentgeoscore.com/) · [**The GEO paper**](https://arxiv.org/abs/2311.09735) · [**Contributing**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**Changelog**](CHANGELOG.md)
 
 <picture>
   <source srcset="docs/hero-breakdown.webp" type="image/webp">
@@ -67,8 +67,8 @@ Paste a URL, get:
 - **AI-search test prompts** auto-generated for the site's category, with deep-links to ChatGPT / Perplexity / Claude / Google AI Mode (so you can verify visibility in the field, not just on paper)
 - a **dynamic OG share card** for every report
 
-**Live**: <https://dist-olcivbch.devinapps.com/>
-**Backend**: <https://agentgeoscore-1ei53w.fly.dev> (Fly.io, region `ams`, auto-stops idle machines)
+**Live**: <https://agentgeoscore.com/>
+**Backend**: <https://api.agentgeoscore.com> (Fly.io, region `ams`, auto-stops idle machines)
 
 The score blends 5 weighted categories (40 individual checks). Each check is grounded in a citation from the AI-search literature or a documented platform behavior — none of it is vibes.
 
@@ -121,9 +121,9 @@ Every outbound URL is SSRF-guarded, every endpoint is rate-limited, every respon
 
 - **Backend**: FastAPI + httpx, typed with Pydantic. Managed with [`uv`](https://docs.astral.sh/uv/).
 - **Frontend**: Vite + React + TypeScript + Tailwind.
-- **Tests**: `pytest` + `respx` (backend, 605 tests, 95% line coverage), `vitest` + `@testing-library/react` (frontend unit, 134 tests, ~100% on action code), Playwright + `@axe-core/playwright` (e2e + a11y across desktop / tablet / mobile viewports).
+- **Tests**: `pytest` + `respx` (backend, 605 tests, 95% line coverage), `vitest` + `@testing-library/react` (frontend unit, 152 tests, ~100% on action code), Playwright + `@axe-core/playwright` (e2e + a11y across desktop / tablet / mobile viewports).
 - **CI**: GitHub Actions — lint, typecheck, unit, build, e2e, Lighthouse, custom web-gates.
-- **Deploy**: Backend → Fly.io (auto-deploys on push to `main` from `Dockerfile`). Frontend → static bundle on devinapps.com (S3).
+- **Deploy**: Backend → Fly.io at `api.agentgeoscore.com` (auto-deploys on push to `main` from `Dockerfile`). Frontend → Cloudflare Pages at `agentgeoscore.com` (auto-deploys on push to `main` from `frontend/`).
 
 ## Project layout
 

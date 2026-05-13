@@ -89,7 +89,7 @@ categories all score 100. Both must stay green.
 
 The static SEO shell, `robots.txt`, `sitemap.xml`, `llms.txt`, and
 `.well-known/security.txt` reference a production frontend origin. Source
-files keep `https://dist-olcivbch.devinapps.com` as the literal default;
+files keep `https://agentgeoscore.com` as the literal default;
 the Vite build pipeline rewrites every occurrence to the value of
 `VITE_FRONTEND_ORIGIN` (see `frontend/vite.config.ts`).
 

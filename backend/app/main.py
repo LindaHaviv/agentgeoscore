@@ -59,7 +59,7 @@ load_dotenv()
 # Frontend origin to redirect humans to from the /share route.
 # Override via FRONTEND_ORIGIN env var in deploy config.
 FRONTEND_ORIGIN = os.environ.get(
-    "FRONTEND_ORIGIN", "https://dist-olcivbch.devinapps.com"
+    "FRONTEND_ORIGIN", "https://agentgeoscore.com"
 ).rstrip("/")
 
 # Public backend origin used when composing absolute URLs in crawler-facing
@@ -72,7 +72,8 @@ BACKEND_ORIGIN = os.environ.get("BACKEND_ORIGIN", "").rstrip("/")
 # frontend; ``*`` is still supported for local dev (``ALLOWED_ORIGINS=*``)
 # but only when explicitly opted into via env.
 _DEFAULT_ALLOWED_ORIGINS = (
-    f"{FRONTEND_ORIGIN},http://localhost:5173,http://127.0.0.1:5173"
+    f"{FRONTEND_ORIGIN},https://www.agentgeoscore.com,"
+    "http://localhost:5173,http://127.0.0.1:5173"
 )
 _ALLOWED_ORIGINS_RAW = os.environ.get(
     "ALLOWED_ORIGINS", _DEFAULT_ALLOWED_ORIGINS
