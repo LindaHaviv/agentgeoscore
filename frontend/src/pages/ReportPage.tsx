@@ -148,7 +148,7 @@ function ShareBar({ report }: { report: Report }) {
             setCopied(true);
             setTimeout(() => setCopied(false), 1800);
           }}
-          className="px-4 py-2 border border-ink-900 text-ink-900 hover:bg-ink-900 hover:text-paper text-sm font-medium font-display tracking-tightish transition-colors"
+          className="inline-block px-4 py-2 border border-ink-900 text-ink-900 hover:bg-ink-900 hover:text-paper text-sm font-medium font-display tracking-tightish transition-colors"
         >
           {copied ? 'Copied ✓' : 'Copy link'}
         </button>
@@ -156,7 +156,7 @@ function ShareBar({ report }: { report: Report }) {
           href={twitterUrl}
           target="_blank"
           rel="noreferrer"
-          className="px-4 py-2 bg-ink-900 text-paper hover:bg-terra-deep text-sm font-medium font-display tracking-tightish transition-colors"
+          className="inline-block px-4 py-2 bg-ink-900 text-paper hover:bg-terra-deep text-sm font-medium font-display tracking-tightish transition-colors"
         >
           Post on X
         </a>
