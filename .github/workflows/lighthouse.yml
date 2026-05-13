@@ -1,0 +1,43 @@
+name: Lighthouse CI
+
+# Manually-triggered (heavy: full headless Chrome run, ~2 min). Run before
+# launch or after any UI / asset / build-pipeline change. Thresholds are in
+# frontend/lighthouserc.json.
+on:
+  workflow_dispatch: {}
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lhci:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'run-lighthouse'
+    name: lighthouse (Perf / A11y / SEO / Best-Practices)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@^0.14
+      - name: Run Lighthouse CI
+        run: lhci autorun
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: frontend/.lighthouseci
+          retention-days: 7

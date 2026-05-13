@@ -36,3 +36,6 @@ test-results/
 
 # Devin
 .devin/
+
+# Claude Code local state
+.claude/

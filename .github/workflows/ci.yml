@@ -47,10 +47,13 @@ jobs:
         run: npm run typecheck
       - name: lint
         run: npm run lint
-      - name: build
-        run: npm run build
+      # vitest before build: failing tests are the most common signal we
+      # want to surface fast — wait through ~600 ms of bundling only when
+      # the suite is already green.
       - name: vitest
         run: npm test -- --run
+      - name: build
+        run: npm run build
       - name: validate built HTML
         run: npm run validate-html
       - name: Upload dist (for downstream gates job)
