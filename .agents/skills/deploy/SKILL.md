@@ -89,6 +89,20 @@ ls -la /tmp/og.png                                                          # ex
 curl -sS 'https://api.agentgeoscore.com/share?d=stripe.com&s=94&g=A' | grep -E 'og:image|refresh'
 ```
 
+## Pre-merge cutover gate
+
+Before merging a PR that flips the production domain (e.g. devinapps →
+custom), run `scripts/precheck-cutover.sh` against the target URLs to
+catch the deploy-ordering hazard where DNS / Fly cert / OG endpoint
+aren't all live yet:
+
+```bash
+./scripts/precheck-cutover.sh https://agentgeoscore.com https://api.agentgeoscore.com
+```
+
+Exits non-zero if any of the prod endpoints fail their health check.
+Treat a non-zero exit as a merge blocker.
+
 ## End-to-end deploy smoke test (run after either deploy)
 
 1. Visit `https://agentgeoscore.com/`, scan `stripe.com`, confirm report renders with a numeric score.

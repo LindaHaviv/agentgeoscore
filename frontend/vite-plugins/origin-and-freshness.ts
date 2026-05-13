@@ -6,13 +6,21 @@
  * see src/test/origin-and-freshness.test.ts.
  */
 
-/** The URL that source files reference verbatim. */
-export const DEFAULT_ORIGIN = 'https://dist-olcivbch.devinapps.com';
+/** The production frontend URL that source files reference verbatim. */
+export const DEFAULT_ORIGIN = 'https://agentgeoscore.com';
+
+/** The production backend (API) URL that source files reference verbatim. */
+export const DEFAULT_API_BASE = 'https://api.agentgeoscore.com';
 
 /** Replace every occurrence of DEFAULT_ORIGIN with `targetOrigin`. */
 export function rewriteOrigin(content: string, targetOrigin: string): string {
   // split/join avoids any regex-special-char surprises in the placeholder.
   return content.split(DEFAULT_ORIGIN).join(targetOrigin);
+}
+
+/** Replace every occurrence of DEFAULT_API_BASE with `targetApiBase`. */
+export function rewriteApiBase(content: string, targetApiBase: string): string {
+  return content.split(DEFAULT_API_BASE).join(targetApiBase);
 }
 
 /**
@@ -76,18 +84,23 @@ export function rewriteCopyrightYear(content: string, year: string): string {
   );
 }
 
-/** Build-style helper: rewrite origin, date, and copyright year in one pass. */
+/** Build-style helper: rewrite origin, API base, date, and copyright year in one pass. */
 export function rewriteAll(
   content: string,
   targetOrigin: string,
   isoDate: string,
   humanDate: string,
+  targetApiBase: string = DEFAULT_API_BASE,
 ): string {
   // Derive the year from isoDate so callers don't need to pass it explicitly
   // and the existing call sites + integration tests keep working unchanged.
   const year = isoDate.slice(0, 4);
   return rewriteCopyrightYear(
-    rewriteUpdatedDate(rewriteOrigin(content, targetOrigin), isoDate, humanDate),
+    rewriteUpdatedDate(
+      rewriteApiBase(rewriteOrigin(content, targetOrigin), targetApiBase),
+      isoDate,
+      humanDate,
+    ),
     year,
   );
 }

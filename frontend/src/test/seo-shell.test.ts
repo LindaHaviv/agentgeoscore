@@ -198,7 +198,8 @@ describe('SEO shell — citability signals inside the main <article>', () => {
         const host = new URL(h).host.toLowerCase().replace(/^www\./, '');
         const parts = host.split('.');
         const registered = parts.length > 2 ? parts.slice(-2).join('.') : host;
-        if (registered.includes('devinapps.com') || registered.includes('agentgeoscore-1ei53w')) continue;
+        // Drop self-references so the outbound-domain count is honest.
+        if (registered === 'agentgeoscore.com') continue;
         domains.add(registered);
       } catch {
         // ignore malformed URLs

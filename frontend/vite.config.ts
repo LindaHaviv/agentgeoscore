@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import {
+  DEFAULT_API_BASE,
   DEFAULT_ORIGIN,
   rewriteAll,
   todayHuman,
@@ -10,9 +11,10 @@ import {
 } from './vite-plugins/origin-and-freshness';
 
 /**
- * Rewrites every literal `https://dist-olcivbch.devinapps.com` occurrence in
- * the built HTML and the copied `public/` files to whatever
- * `VITE_FRONTEND_ORIGIN` (or its fallback) is. Also rewrites the byline
+ * Rewrites every literal `DEFAULT_ORIGIN` (production frontend URL) and
+ * `DEFAULT_API_BASE` (production backend URL) occurrence in the built HTML
+ * and the copied `public/` files to whatever `VITE_FRONTEND_ORIGIN` and
+ * `VITE_API_BASE` (or their fallbacks) are. Also rewrites the byline
  * `<time datetime>` + visible "Updated …" date to today.
  *
  * Pure substitution logic lives in build/origin-and-freshness.ts so it can
@@ -31,10 +33,12 @@ function originAndFreshnessPlugin(): Plugin {
     );
   }
   const targetOrigin = (process.env.VITE_FRONTEND_ORIGIN || DEFAULT_ORIGIN).replace(/\/$/, '');
+  const targetApiBase = (process.env.VITE_API_BASE || DEFAULT_API_BASE).replace(/\/$/, '');
   const now = new Date();
   const isoDate = todayIso(now);
   const humanDate = todayHuman(now);
-  const apply = (s: string) => rewriteAll(s, targetOrigin, isoDate, humanDate);
+  const apply = (s: string) =>
+    rewriteAll(s, targetOrigin, isoDate, humanDate, targetApiBase);
 
   return {
     name: 'agentgeoscore-origin-and-freshness',

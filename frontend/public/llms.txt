@@ -6,7 +6,7 @@ AgentGEOScore is an open-source web tool and FastAPI backend that audits any URL
 
 ## Core docs
 
-- [Home](https://dist-olcivbch.devinapps.com/): paste a URL, get a report
+- [Home](https://agentgeoscore.com/): paste a URL, get a report
 - [README](https://github.com/LindaHaviv/agentgeoscore/blob/main/README.md): scoring methodology, scanner internals, how to add a gap
 - [Changelog](https://github.com/LindaHaviv/agentgeoscore/blob/main/CHANGELOG.md): release notes
 - [Security policy](https://github.com/LindaHaviv/agentgeoscore/blob/main/SECURITY.md): threat model, SSRF hardening, vulnerability disclosure

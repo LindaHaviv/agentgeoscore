@@ -4,8 +4,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_API_BASE,
   DEFAULT_ORIGIN,
   rewriteAll,
+  rewriteApiBase,
   rewriteCopyrightYear,
   rewriteOrigin,
   rewriteUpdatedDate,
@@ -16,11 +18,11 @@ import {
 describe('rewriteOrigin', () => {
   it('replaces every occurrence of the default origin', () => {
     const input = `<a href="${DEFAULT_ORIGIN}/x">x</a><a href="${DEFAULT_ORIGIN}/y">y</a>`;
-    const out = rewriteOrigin(input, 'https://agentgeoscore.com');
+    const out = rewriteOrigin(input, 'https://preview-abc.pages.dev');
     expect(out).toBe(
-      '<a href="https://agentgeoscore.com/x">x</a><a href="https://agentgeoscore.com/y">y</a>',
+      '<a href="https://preview-abc.pages.dev/x">x</a><a href="https://preview-abc.pages.dev/y">y</a>',
     );
-    expect(out).not.toContain('dist-olcivbch.devinapps.com');
+    expect(out).not.toContain(DEFAULT_ORIGIN);
   });
 
   it('is a no-op when target equals default', () => {
@@ -30,9 +32,9 @@ describe('rewriteOrigin', () => {
 
   it('does not partial-match a different domain that contains the default as substring', () => {
     // Verifies split/join doesn't false-positive on something like
-    // `prefix-https://dist-olcivbch.devinapps.com-suffix` — it WOULD match,
-    // which is the desired behaviour (string replacement, not boundary-aware).
-    // This test pins that behaviour so any future change to boundary-aware
+    // `prefix-${DEFAULT_ORIGIN}-suffix` — it WOULD match, which is the
+    // desired behaviour (string replacement, not boundary-aware). This
+    // test pins that behaviour so any future change to boundary-aware
     // logic is intentional.
     const input = `weird-${DEFAULT_ORIGIN}-tail`;
     expect(rewriteOrigin(input, 'https://x.com')).toBe('weird-https://x.com-tail');
@@ -41,6 +43,27 @@ describe('rewriteOrigin', () => {
   it('leaves unrelated content untouched', () => {
     const input = '<title>Hello</title><meta name="x" content="y">';
     expect(rewriteOrigin(input, 'https://x.com')).toBe(input);
+  });
+});
+
+describe('rewriteApiBase', () => {
+  it('replaces every occurrence of the default API base', () => {
+    const input = `<meta property="og:image" content="${DEFAULT_API_BASE}/api/og?brand=1" /><img src="${DEFAULT_API_BASE}/api/og?d=stripe.com">`;
+    const out = rewriteApiBase(input, 'https://preview-api.fly.dev');
+    expect(out).toContain('https://preview-api.fly.dev/api/og?brand=1');
+    expect(out).not.toContain(DEFAULT_API_BASE);
+  });
+
+  it('is a no-op when target equals default', () => {
+    const input = `image: ${DEFAULT_API_BASE}/api/og?brand=1`;
+    expect(rewriteApiBase(input, DEFAULT_API_BASE)).toBe(input);
+  });
+
+  it('does not touch DEFAULT_ORIGIN occurrences', () => {
+    const input = `${DEFAULT_ORIGIN}/ + ${DEFAULT_API_BASE}/api`;
+    const out = rewriteApiBase(input, 'https://other-api.com');
+    expect(out).toContain(DEFAULT_ORIGIN);
+    expect(out).toContain('https://other-api.com/api');
   });
 });
 
