@@ -121,9 +121,9 @@ Every outbound URL is SSRF-guarded, every endpoint is rate-limited, every respon
 
 - **Backend**: FastAPI + httpx, typed with Pydantic. Managed with [`uv`](https://docs.astral.sh/uv/).
 - **Frontend**: Vite + React + TypeScript + Tailwind.
-- **Tests**: `pytest` + `respx` (backend, 605 tests, 95% line coverage), `vitest` + `@testing-library/react` (frontend unit, 134 tests, ~100% on action code), Playwright + `@axe-core/playwright` (e2e + a11y across desktop / tablet / mobile viewports).
+- **Tests**: `pytest` + `respx` (backend, 605 tests, 95% line coverage), `vitest` + `@testing-library/react` (frontend unit, 152 tests, ~100% on action code), Playwright + `@axe-core/playwright` (e2e + a11y across desktop / tablet / mobile viewports).
 - **CI**: GitHub Actions — lint, typecheck, unit, build, e2e, Lighthouse, custom web-gates.
-- **Deploy**: Backend → Fly.io (auto-deploys on push to `main` from `Dockerfile`). Frontend → static bundle on devinapps.com (S3).
+- **Deploy**: Backend → Fly.io at `api.agentgeoscore.com` (auto-deploys on push to `main` from `Dockerfile`). Frontend → Cloudflare Pages at `agentgeoscore.com` (auto-deploys on push to `main` from `frontend/`).
 
 ## Project layout
 
