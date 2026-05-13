@@ -79,7 +79,7 @@ These are documented residual risks that we accept rather than fix:
   at validation time and a private IP at fetch time. The bulletproof
   fix is to pin the resolved IP through to the HTTP connection (custom
   transport). For a public-internet GEO auditor we accept the residual
-  risk; if you have a working PoC against `agentgeoscore-1ei53w.fly.dev`
+  risk; if you have a working PoC against `api.agentgeoscore.com`
   we'd love to see it.
 - **Free-tier quota exhaustion.** A determined attacker hitting
   `/api/scan` from a botnet of distinct IPs can still burn through our

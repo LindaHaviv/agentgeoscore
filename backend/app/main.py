@@ -72,7 +72,8 @@ BACKEND_ORIGIN = os.environ.get("BACKEND_ORIGIN", "").rstrip("/")
 # frontend; ``*`` is still supported for local dev (``ALLOWED_ORIGINS=*``)
 # but only when explicitly opted into via env.
 _DEFAULT_ALLOWED_ORIGINS = (
-    f"{FRONTEND_ORIGIN},http://localhost:5173,http://127.0.0.1:5173"
+    f"{FRONTEND_ORIGIN},https://www.agentgeoscore.com,"
+    "http://localhost:5173,http://127.0.0.1:5173"
 )
 _ALLOWED_ORIGINS_RAW = os.environ.get(
     "ALLOWED_ORIGINS", _DEFAULT_ALLOWED_ORIGINS

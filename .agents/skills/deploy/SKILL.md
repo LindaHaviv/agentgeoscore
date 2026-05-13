@@ -1,10 +1,17 @@
 # Deploy — AgentGEOScore
 
-Reference for shipping the frontend (devinapps) and backend (Fly) of AgentGEOScore, and what to double-check so a deploy doesn't silently regress share/OG behavior.
+Reference for shipping the frontend (Cloudflare Pages) and backend (Fly) of AgentGEOScore, and what to double-check so a deploy doesn't silently regress share/OG behavior.
+
+> **Migration in progress (#45):** Production domain is being cut over from
+> the devinapps preview URL to `agentgeoscore.com` / `api.agentgeoscore.com`.
+> Until DNS + Cloudflare Pages + Fly cert are all live, the legacy URLs in
+> the smoke-check examples below may be the only ones that resolve. Replace
+> URLs as cutover progresses.
 
 ## Live URLs
-- Frontend (devinapps): `https://dist-olcivbch.devinapps.com`
-- Backend (Fly): `https://agentgeoscore-1ei53w.fly.dev`
+- Frontend (Cloudflare Pages): `https://agentgeoscore.com`
+- Backend (Fly, public): `https://api.agentgeoscore.com`
+- Backend (Fly, internal host): `agentgeoscore-1ei53w.fly.dev`
 - Fly app name: `agentgeoscore-1ei53w`
 
 ## Frontend — build + deploy
@@ -31,19 +38,22 @@ None of this fails CI (`vitest + tsc + build` all pass). It only manifests on a 
 
 ```bash
 cd frontend
-VITE_API_BASE=https://agentgeoscore-1ei53w.fly.dev npm run build
+VITE_API_BASE=https://api.agentgeoscore.com \
+  VITE_FRONTEND_ORIGIN=https://agentgeoscore.com \
+  npm run build
 ```
 
-Then deploy the `frontend/dist` directory to devinapps via the `deploy` tool (`command="frontend"`, `dir="/abs/path/to/frontend/dist"`).
+Production builds **require** `VITE_FRONTEND_ORIGIN` — the Vite plugin in `vite.config.ts` throws if it's missing when `NODE_ENV=production`. On Cloudflare Pages set both env vars (Production + Preview scopes) in the Pages project settings.
 
 ### Quick post-deploy smoke check
 
 ```bash
-CUR_JS=$(curl -sS https://dist-olcivbch.devinapps.com/ | grep -oE 'index-[a-zA-Z0-9_-]+\.js' | head -1)
-curl -sS "https://dist-olcivbch.devinapps.com/assets/$CUR_JS" | grep -c -F '/share?'
+SITE=https://agentgeoscore.com   # or your preview Pages URL
+CUR_JS=$(curl -sS "$SITE/" | grep -oE 'index-[a-zA-Z0-9_-]+\.js' | head -1)
+curl -sS "$SITE/assets/$CUR_JS" | grep -c -F '/share?'
 # expect >= 1; '0' means VITE_API_BASE was missing at build time
-curl -sS "https://dist-olcivbch.devinapps.com/assets/$CUR_JS" | grep -oaE 'https://[a-z0-9.-]+\.fly\.dev' | sort -u
-# expect the Fly backend URL
+curl -sS "$SITE/assets/$CUR_JS" | grep -oaE 'https://api\.agentgeoscore\.com' | sort -u
+# expect https://api.agentgeoscore.com
 ```
 
 ## Backend — build + deploy (Fly)
@@ -56,7 +66,9 @@ Backend runs on Fly at `agentgeoscore-1ei53w`. A `fly.toml` + Dockerfile live at
 - `BACKEND_ORIGIN` — optional pin for the public backend host used in `og:image` meta. If set, `/share` ignores the inbound `Host` header when composing absolute URLs. Set this on Fly to harden against Host-header spoofing:
 
 ```bash
-fly secrets set --app agentgeoscore-1ei53w BACKEND_ORIGIN=https://agentgeoscore-1ei53w.fly.dev
+fly secrets set --app agentgeoscore-1ei53w \
+  BACKEND_ORIGIN=https://api.agentgeoscore.com \
+  FRONTEND_ORIGIN=https://agentgeoscore.com
 ```
 
 - Probe keys (all optional, graceful skip when absent): `GEMINI_API_KEY`, `MISTRAL_API_KEY`, `BRAVE_API_KEY`, `GROQ_API_KEY`. Set via `fly secrets set --app agentgeoscore-1ei53w KEY=value`.
@@ -70,16 +82,16 @@ The OG image renderer loads bundled fonts from `backend/app/assets/fonts/` (Deja
 
 ```bash
 # OG PNG should be 1200x630 RGB, >25 KB
-curl -sS -o /tmp/og.png 'https://agentgeoscore-1ei53w.fly.dev/api/og?d=stripe.com&s=94&g=A'
+curl -sS -o /tmp/og.png 'https://api.agentgeoscore.com/api/og?d=stripe.com&s=94&g=A'
 python3 -c "from PIL import Image; print(Image.open('/tmp/og.png').size)"  # -> (1200, 630)
 ls -la /tmp/og.png                                                          # expect > 25 KB
 # Share route should return HTML w/ OG meta + refresh redirect
-curl -sS 'https://agentgeoscore-1ei53w.fly.dev/share?d=stripe.com&s=94&g=A' | grep -E 'og:image|refresh'
+curl -sS 'https://api.agentgeoscore.com/share?d=stripe.com&s=94&g=A' | grep -E 'og:image|refresh'
 ```
 
 ## End-to-end deploy smoke test (run after either deploy)
 
-1. Visit `https://dist-olcivbch.devinapps.com/`, scan `stripe.com`, confirm report renders with a numeric score.
+1. Visit `https://agentgeoscore.com/`, scan `stripe.com`, confirm report renders with a numeric score.
 2. Scroll to ShareBar, click "Copy link".
-3. Read the clipboard: `DISPLAY=:0 xclip -selection clipboard -o` — expect `https://agentgeoscore-1ei53w.fly.dev/share?d=stripe.com&s=<score>&g=<grade>`, **not** the SPA URL.
+3. Read the clipboard: `DISPLAY=:0 xclip -selection clipboard -o` — expect `https://api.agentgeoscore.com/share?d=stripe.com&s=<score>&g=<grade>`, **not** the SPA URL.
 4. Paste that URL into `https://www.opengraph.xyz/url/<encoded>` and verify the card preview.

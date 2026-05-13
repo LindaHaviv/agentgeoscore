@@ -21,7 +21,7 @@ Paste the relevant slice of the report JSON, or attach a screenshot of the UI.
 - [ ] Once
 
 **Environment**
-- Hosted (https://dist-olcivbch.devinapps.com) or self-hosted?
+- Hosted (https://agentgeoscore.com) or self-hosted?
 - Browser + OS (if a UI bug)
 - Backend version: `git rev-parse HEAD` if self-hosted
 

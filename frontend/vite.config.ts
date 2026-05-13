@@ -19,6 +19,17 @@ import {
  * be unit-tested in isolation; this plugin is the Vite-side glue.
  */
 function originAndFreshnessPlugin(): Plugin {
+  // Fail loud on production builds without an explicit VITE_FRONTEND_ORIGIN —
+  // otherwise the built artifact silently ships the devinapps placeholder in
+  // og:url, canonical, JSON-LD @id, and sitemap.xml, which then pollutes any
+  // share preview or AI-crawler index that scrapes the production deploy.
+  if (process.env.NODE_ENV === 'production' && !process.env.VITE_FRONTEND_ORIGIN) {
+    throw new Error(
+      'VITE_FRONTEND_ORIGIN must be set for production builds. ' +
+        'Set it on the host (e.g. Cloudflare Pages → Environment variables) to ' +
+        'the public site origin (e.g. https://agentgeoscore.com).',
+    );
+  }
   const targetOrigin = (process.env.VITE_FRONTEND_ORIGIN || DEFAULT_ORIGIN).replace(/\/$/, '');
   const now = new Date();
   const isoDate = todayIso(now);

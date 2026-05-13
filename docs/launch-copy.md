@@ -1,7 +1,7 @@
 # Launch copy — drafts for the public OSS release
 
 Honest, sometimes-self-deprecating drafts. Lift any of these as-is or
-remix. Live link: https://dist-olcivbch.devinapps.com/. Repo:
+remix. Live link: https://agentgeoscore.com/. Repo:
 https://github.com/LindaHaviv/agentgeoscore.
 
 ---
@@ -28,7 +28,7 @@ playwright
 
 **Homepage URL field:**
 ```
-https://dist-olcivbch.devinapps.com/
+https://agentgeoscore.com/
 ```
 
 **One-shot CLI to set them all (you run this; I don't have a token with `repo:write` from here):**
@@ -36,7 +36,7 @@ https://dist-olcivbch.devinapps.com/
 ```bash
 gh repo edit LindaHaviv/agentgeoscore \
   --description "Score any URL for how AI agents find, read, and cite it. 8 evidence-backed gap scanners + 5 live LLM citation probes + ranked fix list." \
-  --homepage "https://dist-olcivbch.devinapps.com/" \
+  --homepage "https://agentgeoscore.com/" \
   --add-topic geo \
   --add-topic generative-engine-optimization \
   --add-topic seo \
@@ -88,7 +88,7 @@ gh repo edit LindaHaviv/agentgeoscore \
 > fetches arbitrary user-supplied URLs, so it ships with an SSRF guard,
 > per-IP rate limits, strict CSP, and the rest of the usual hardening).
 >
-> Live demo: https://dist-olcivbch.devinapps.com/
+> Live demo: https://agentgeoscore.com/
 > Repo: https://github.com/LindaHaviv/agentgeoscore
 >
 > Curious to hear which of the 8 "gap scanners" feels most useful or
@@ -106,7 +106,7 @@ gh repo edit LindaHaviv/agentgeoscore \
 > Paste any URL → get a 0–100 score for how well AI agents (ChatGPT,
 > Claude, Gemini, Perplexity, Groq, Brave) can find, read, and cite it.
 >
-> Live: https://dist-olcivbch.devinapps.com/
+> Live: https://agentgeoscore.com/
 > Repo: https://github.com/LindaHaviv/agentgeoscore
 
 **2/ (what's different)**
@@ -142,7 +142,7 @@ gh repo edit LindaHaviv/agentgeoscore \
 > contribute — if your industry isn't covered, send a PR with a
 > CategoryDef + detection test.
 >
-> Live: https://dist-olcivbch.devinapps.com/
+> Live: https://agentgeoscore.com/
 > Repo: https://github.com/LindaHaviv/agentgeoscore
 
 ---
@@ -172,7 +172,7 @@ gh repo edit LindaHaviv/agentgeoscore \
 > — the category lexicon is hand-curated and the easiest place to
 > start.
 >
-> Demo: https://dist-olcivbch.devinapps.com/
+> Demo: https://agentgeoscore.com/
 > Repo: https://github.com/LindaHaviv/agentgeoscore
 
 ---
@@ -185,7 +185,7 @@ gh repo edit LindaHaviv/agentgeoscore \
 > Score any URL on how well AI agents — ChatGPT, Claude, Gemini,
 > Perplexity, Groq, Brave — can **find**, **read**, and **cite** it.
 
-[Live demo](https://dist-olcivbch.devinapps.com/) · [The GEO paper](https://arxiv.org/abs/2311.09735) · [Hardening](#hardening) · [Contributing](#contributing)
+[Live demo](https://agentgeoscore.com/) · [The GEO paper](https://arxiv.org/abs/2311.09735) · [Hardening](#hardening) · [Contributing](#contributing)
 
 ![AgentGEOScore report breakdown — 80/B for stripe.com showing all 5 categories](docs/hero-breakdown.png)
 
@@ -203,7 +203,7 @@ against multiple AI engines. Free, no signup, MIT-licensed.
 **Author:** Linda Haviv (linda.haviv@gmail.com)
 **License:** MIT
 **Stack:** FastAPI · Python 3.11 · React · Vite · Tailwind · Pillow · Playwright
-**Live:** https://dist-olcivbch.devinapps.com/
+**Live:** https://agentgeoscore.com/
 **Repo:** https://github.com/LindaHaviv/agentgeoscore
 **What it does:** Grades any URL (0–100, A–F) on how well AI agents find, read, and cite it. 5 categories, 40 checks, 8 evidence-backed gap scanners, 5 live LLM citation probes, ranked fix list with copy-pasteable HTML.
 **What it doesn't do:** Track over time, store data, require login, claim to know exactly how each engine ranks.

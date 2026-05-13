@@ -7,8 +7,10 @@ loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.0] – 2026-05-10 — Initial public release
 
-This is the version that shipped to https://dist-olcivbch.devinapps.com/
-when the repo went public. Everything below merged through PRs #1–#28.
+This is the version that shipped to https://agentgeoscore.com/
+when the repo went public (initially hosted at the devinapps preview
+domain; cut over to the custom domain in #45). Everything below merged
+through PRs #1–#28.
 
 ### Scoring engine
 

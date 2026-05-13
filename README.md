@@ -10,7 +10,7 @@
 [![Frontend tests](https://img.shields.io/badge/frontend_tests-134_passing-success)](frontend/src/test)
 [![Code of Conduct](https://img.shields.io/badge/contributor_covenant-2.1-purple.svg)](CODE_OF_CONDUCT.md)
 
-[**Live demo**](https://dist-olcivbch.devinapps.com/) · [**The GEO paper**](https://arxiv.org/abs/2311.09735) · [**Contributing**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**Changelog**](CHANGELOG.md)
+[**Live demo**](https://agentgeoscore.com/) · [**The GEO paper**](https://arxiv.org/abs/2311.09735) · [**Contributing**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**Changelog**](CHANGELOG.md)
 
 <picture>
   <source srcset="docs/hero-breakdown.webp" type="image/webp">
@@ -67,8 +67,8 @@ Paste a URL, get:
 - **AI-search test prompts** auto-generated for the site's category, with deep-links to ChatGPT / Perplexity / Claude / Google AI Mode (so you can verify visibility in the field, not just on paper)
 - a **dynamic OG share card** for every report
 
-**Live**: <https://dist-olcivbch.devinapps.com/>
-**Backend**: <https://agentgeoscore-1ei53w.fly.dev> (Fly.io, region `ams`, auto-stops idle machines)
+**Live**: <https://agentgeoscore.com/>
+**Backend**: <https://api.agentgeoscore.com> (Fly.io, region `ams`, auto-stops idle machines)
 
 The score blends 5 weighted categories (40 individual checks). Each check is grounded in a citation from the AI-search literature or a documented platform behavior — none of it is vibes.
 

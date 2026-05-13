@@ -22,9 +22,9 @@ AgentGEOScore is an open-source web tool and FastAPI backend that audits any URL
 
 ## API
 
-- POST `https://agentgeoscore-1ei53w.fly.dev/api/scan` — body `{ "url": "...", "include_probe": true }` returns a Report
-- POST `https://agentgeoscore-1ei53w.fly.dev/api/compare` — `{ "target": "...", "competitors": ["..."] }` for side-by-side scoring
-- GET `https://agentgeoscore-1ei53w.fly.dev/api/share/og?d=domain&s=score&g=grade` — dynamic OG share-card PNG
+- POST `https://api.agentgeoscore.com/api/scan` — body `{ "url": "...", "include_probe": true }` returns a Report
+- POST `https://api.agentgeoscore.com/api/compare` — `{ "target": "...", "competitors": ["..."] }` for side-by-side scoring
+- GET `https://api.agentgeoscore.com/api/share/og?d=domain&s=score&g=grade` — dynamic OG share-card PNG
 - Rate limits: 10/min on `/api/scan`, 5/min on `/api/compare`, 30/min on `/api/test-prompts`. Per-IP, slowapi-enforced.
 
 ## What we measure
