@@ -103,17 +103,13 @@ run_capture() {
 gates=()
 
 # ─── 1. predict_self_score ────────────────────────────────────────────────
+# Subshell pattern (`out=$( cd dir && cmd )`) is strictly more bulletproof
+# than pushd/popd: the parent's cwd is unaffected regardless of what the
+# subshell does, even if the subprocess crashes or changes directory
+# itself. No popd to remember, no cwd-leak risk for subsequent gates.
 if [[ -f backend/tests/test_predict_self_score.py ]]; then
-  pred_out=""
-  pred_rc=1
-  if pushd backend >/dev/null 2>&1; then
-    # Capture rc IMMEDIATELY after pytest, BEFORE popd (popd's rc would mask it).
-    pred_out=$(uv run --extra dev pytest tests/test_predict_self_score.py -q --tb=line 2>&1)
-    pred_rc=$?
-    popd >/dev/null || true
-  else
-    pred_out="couldn't cd into backend/"
-  fi
+  pred_out=$(cd backend && uv run --extra dev pytest tests/test_predict_self_score.py -q --tb=line 2>&1)
+  pred_rc=$?
   if [[ $pred_rc -eq 0 ]]; then
     gates+=("$(emit_gate predict_self_score pass "Full /api/scan pipeline returns 100/A on rebuilt dist" "$pred_out")")
   else
@@ -125,18 +121,12 @@ fi
 
 # ─── 2. seo_shell ─────────────────────────────────────────────────────────
 if [[ -f frontend/src/test/seo-shell.test.ts ]]; then
-  seo_out=""
-  seo_rc=1
-  if pushd frontend >/dev/null 2>&1; then
-    if [[ ! -d node_modules ]]; then
-      npm ci >/dev/null 2>&1 || true
-    fi
-    seo_out=$(npm test -- --run src/test/seo-shell.test.ts 2>&1)
-    seo_rc=$?
-    popd >/dev/null || true
-  else
-    seo_out="couldn't cd into frontend/"
-  fi
+  seo_out=$(
+    cd frontend || exit 1
+    [[ -d node_modules ]] || npm ci >/dev/null 2>&1 || true
+    npm test -- --run src/test/seo-shell.test.ts 2>&1
+  )
+  seo_rc=$?
   if [[ $seo_rc -eq 0 ]]; then
     gates+=("$(emit_gate seo_shell pass "SEO shell assertions all pass" "$seo_out")")
   else
@@ -179,14 +169,13 @@ if [[ -f README.md ]]; then
   fi
   actual_count=""
   if [[ -d backend ]]; then
-    # Drop `-q` so pytest emits the grand total line.
-    if pushd backend >/dev/null 2>&1; then
-      actual_count=$(uv run --extra dev pytest --collect-only 2>/dev/null \
+    # Drop `-q` so pytest emits the grand total line. Subshell scopes the cd.
+    actual_count=$(
+      cd backend && uv run --extra dev pytest --collect-only 2>/dev/null \
         | grep -oE '[0-9]+ tests? collected' \
         | grep -oE '^[0-9]+' \
-        | head -1)
-      popd >/dev/null || true
-    fi
+        | head -1
+    )
   fi
   if [[ -n "$readme_count" && -n "$actual_count" ]]; then
     if [[ "$readme_count" == "$actual_count" ]]; then
@@ -258,16 +247,10 @@ if [[ -d frontend/dist ]]; then
   html_files=$(find frontend/dist -maxdepth 2 -name '*.html' 2>/dev/null | head -5)
   if [[ -n "$html_files" ]] && command -v npx >/dev/null 2>&1; then
     if [[ -f frontend/node_modules/.bin/html-validate ]] || npm ls -g html-validate >/dev/null 2>&1; then
-      # Use pushd/popd with explicit rc capture so cd restoration is bulletproof.
-      hv_out=""
-      hv_rc=1
-      if pushd frontend >/dev/null 2>&1; then
-        hv_out=$(npx html-validate dist/*.html 2>&1)
-        hv_rc=$?
-        popd >/dev/null || true
-      else
-        hv_out="couldn't cd into frontend/"
-      fi
+      # Subshell scopes the cd — no risk of leaking cwd into subsequent gates
+      # if html-validate exits non-zero or somehow changes directory itself.
+      hv_out=$(cd frontend && npx html-validate dist/*.html 2>&1)
+      hv_rc=$?
       if [[ $hv_rc -eq 0 ]]; then
         gates+=("$(emit_gate html_validity pass "Built HTML passes html-validate" "$hv_out")")
       else
@@ -349,6 +332,15 @@ else
 fi
 
 # ─── Join + emit ──────────────────────────────────────────────────────────
+# Defensive: if no gates produced output (every check missing / skipped at
+# a level that never appends), emit an explicit error gate so downstream
+# parsers see something actionable rather than an empty array. (`[]` is
+# valid JSON but signals "nothing ran" — which is itself worth a clear
+# message.)
+if [[ ${#gates[@]} -eq 0 ]]; then
+  gates+=("$(emit_gate _meta error "No gates produced output — check script logic and project layout" "$PROJECT_ROOT")")
+fi
+
 gates_json=""
 for g in "${gates[@]}"; do
   if [[ -z "$gates_json" ]]; then
