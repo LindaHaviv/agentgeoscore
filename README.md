@@ -7,7 +7,7 @@
 [![CI](https://github.com/LindaHaviv/agentgeoscore/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LindaHaviv/agentgeoscore/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Backend tests](https://img.shields.io/badge/backend_tests-605_passing-success)](backend/tests)
-[![Frontend tests](https://img.shields.io/badge/frontend_tests-150_passing-success)](frontend/src/test)
+[![Frontend tests](https://img.shields.io/badge/frontend_tests-152_passing-success)](frontend/src/test)
 [![Code of Conduct](https://img.shields.io/badge/contributor_covenant-2.1-purple.svg)](CODE_OF_CONDUCT.md)
 
 [**Live demo**](https://agentgeoscore.com/) · [**The GEO paper**](https://arxiv.org/abs/2311.09735) · [**Contributing**](CONTRIBUTING.md) · [**Security**](SECURITY.md) · [**Changelog**](CHANGELOG.md)

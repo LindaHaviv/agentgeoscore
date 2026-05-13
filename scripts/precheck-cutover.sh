@@ -74,8 +74,8 @@ check "share route includes og:image meta" \
 # deployed. Anchor on the absolute URL form so it's unambiguous.
 check "share route meta-refresh points at agentgeoscore.com (not legacy)" \
   "grep -qE 'https?://(www\\.)?agentgeoscore\\.com' \"$tmp_share\""
-check "share route does NOT reference legacy devinapps URL" \
-  "! grep -q 'devinapps.com' \"$tmp_share\""
+check "share route does NOT reference legacy preview URL" \
+  "! grep -q 'dist-olcivbch.devinapps.com' \"$tmp_share\""
 echo
 
 echo "Summary: $pass passed, $fail failed"

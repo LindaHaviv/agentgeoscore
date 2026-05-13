@@ -27,18 +27,37 @@ const SCAN_GLOBS = [
   '*.yaml',
   '*.txt',
   '*.xml',
+  '*.sh',
+];
+
+// Files that legitimately reference the legacy URL (e.g. as a must-not-contain
+// regression check). Listed as git pathspec exclude patterns so the scan
+// passes by ignoring them. Keep this list minimal — every entry should have
+// a comment explaining why the literal needs to be there.
+const EXCLUDED_PATHS = [
+  // The precheck script asserts /share HTML does NOT reference the legacy
+  // host post-cutover — the negative-assertion needs the literal in source.
+  ':(exclude)scripts/precheck-cutover.sh',
+  // This test file itself has the legacy host as a LEGACY_HOSTS const.
+  ':(exclude)frontend/src/test/no-legacy-urls.test.ts',
 ];
 
 describe('no-legacy-urls regression guard', () => {
   for (const host of LEGACY_HOSTS) {
     it(`'${host}' must not appear in tracked source files`, () => {
-      const globArgs = SCAN_GLOBS.flatMap((g) => ['--', g]);
+      // Pathspecs follow the `--` separator. Include the file-extension
+      // globs and the exclude patterns in the same pathspec list — git
+      // intersects them so excluded paths don't match even if their
+      // extension does.
+      const pathspecs = [...SCAN_GLOBS, ...EXCLUDED_PATHS]
+        .map((p) => `'${p}'`)
+        .join(' ');
       let out = '';
       try {
         // `git grep` exits 1 when no matches — that's the success case for
         // us. Capture stdout either way and assert on it.
         out = execSync(
-          `git grep -nF '${host}' ${globArgs.map((a) => `'${a}'`).join(' ')}`,
+          `git grep -nF '${host}' -- ${pathspecs}`,
           { cwd: REPO_ROOT, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] },
         ).toString();
       } catch (e: unknown) {
