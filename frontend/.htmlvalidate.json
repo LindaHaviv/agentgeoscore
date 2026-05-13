@@ -5,16 +5,6 @@
   "rules": {
     "no-inline-style": "off",
     "no-trailing-whitespace": "off",
-    "element-required-attributes": "off",
-    "wcag/h30": "off",
-    "wcag/h32": "off",
-    "wcag/h37": "off",
-    "wcag/h63": "off",
-    "wcag/h67": "off",
-    "wcag/h71": "off",
-    "void-style": "off",
-    "no-implicit-button-type": "off",
-    "long-title": "off",
-    "meta-refresh": "off"
+    "void-style": "off"
   }
 }
