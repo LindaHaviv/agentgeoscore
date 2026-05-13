@@ -47,13 +47,63 @@ export default function App() {
       <footer className="px-6 sm:px-10 pt-8 pb-10 mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="rule mb-5" />
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-ink-400">
+          <nav
+            aria-label="Footer"
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-ink-400"
+          >
             <div>
               <span className="font-display text-ink-700 text-sm">{BRAND.name}</span>{' '}
               — {BRAND.tagline} An open field study of how AI agents read the web.
             </div>
-            <div className="kicker !text-[0.65rem]">v0.1 · mit license · no data stored</div>
-          </div>
+            <div className="kicker !text-[0.65rem]">
+              © {new Date().getFullYear()}{' '}
+              <a
+                href="https://github.com/LindaHaviv"
+                rel="author noopener"
+                target="_blank"
+                className="under-dot"
+              >
+                Linda Vivah
+              </a>{' '}
+              ·{' '}
+              <a
+                href={`${BRAND.repoUrl}/blob/main/LICENSE`}
+                rel="noopener"
+                target="_blank"
+                className="under-dot"
+              >
+                MIT
+              </a>{' '}
+              ·{' '}
+              <a
+                href={BRAND.repoUrl}
+                rel="noopener"
+                target="_blank"
+                className="under-dot"
+              >
+                source
+              </a>{' '}
+              ·{' '}
+              <a
+                href={`${BRAND.repoUrl}/blob/main/SECURITY.md`}
+                rel="noopener"
+                target="_blank"
+                className="under-dot"
+              >
+                security
+              </a>{' '}
+              ·{' '}
+              <a
+                href={`${BRAND.repoUrl}/blob/main/CHANGELOG.md`}
+                rel="noopener"
+                target="_blank"
+                className="under-dot"
+              >
+                changelog
+              </a>{' '}
+              · no data stored
+            </div>
+          </nav>
         </div>
       </footer>
     </div>

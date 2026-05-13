@@ -11,6 +11,11 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     color-scheme: light;
+    /* Belt-and-suspenders against mobile-Safari rubber-banding and any
+       transient overflow during animation entry. Nested overflow-x-auto
+       containers (e.g. the competitor-compare results table) still scroll
+       within their own bounds; the page itself doesn't. */
+    overflow-x: hidden;
   }
   body {
     background-color: #FAF6EF;
@@ -18,6 +23,7 @@
       radial-gradient(1200px 600px at 80% -10%, rgba(183, 89, 31, 0.05), transparent 60%),
       radial-gradient(900px 500px at -10% 110%, rgba(93, 122, 62, 0.04), transparent 60%);
     min-height: 100vh;
+    overflow-x: hidden;
   }
   ::selection {
     background: #B7591F;

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_ORIGIN,
   rewriteAll,
+  rewriteCopyrightYear,
   rewriteOrigin,
   rewriteUpdatedDate,
   todayHuman,
@@ -96,11 +97,48 @@ describe('rewriteUpdatedDate', () => {
   });
 });
 
+describe('rewriteCopyrightYear', () => {
+  it('rewrites a stale year when the byline link follows with rel="author"', () => {
+    const input = '© 2025 <a href="https://github.com/x" rel="author noopener" class="under-dot">Linda</a>';
+    const out = rewriteCopyrightYear(input, '2027');
+    expect(out).toBe(
+      '© 2027 <a href="https://github.com/x" rel="author noopener" class="under-dot">Linda</a>',
+    );
+  });
+
+  it('handles attribute order variations (target before rel, etc.)', () => {
+    const input = '© 2024 <a target="_blank" rel="author noopener" href="/me">me</a>';
+    expect(rewriteCopyrightYear(input, '2026')).toContain('© 2026');
+  });
+
+  it('does NOT rewrite "© YYYY" when no rel="author" link follows', () => {
+    // Defensive: don't false-positive on third-party copyright strings in copy.
+    const input = '© 2010 ACME Corp, used with permission.';
+    expect(rewriteCopyrightYear(input, '2027')).toBe(input);
+  });
+
+  it('does NOT rewrite "© YYYY <a>" when the link has no rel="author"', () => {
+    const input = '© 2020 <a href="/legal" rel="noopener">Acme</a>';
+    expect(rewriteCopyrightYear(input, '2027')).toBe(input);
+  });
+
+  it('is a no-op when the year already matches the build year', () => {
+    const input = '© 2026 <a rel="author" href="/me">me</a>';
+    expect(rewriteCopyrightYear(input, '2026')).toBe(input);
+  });
+});
+
 describe('rewriteAll', () => {
   it('combines origin + date rewrites in one pass', () => {
     const input = `<a href="${DEFAULT_ORIGIN}/x">x</a><time datetime="2024-01-01">Jan 1</time>`;
     const out = rewriteAll(input, 'https://x.com', '2026-05-13', 'May 13, 2026');
     expect(out).toBe('<a href="https://x.com/x">x</a><time datetime="2026-05-13">May 13, 2026</time>');
+  });
+
+  it('also rewrites the copyright year (derived from isoDate)', () => {
+    const input = '© 2024 <a href="/me" rel="author noopener">Linda</a>';
+    const out = rewriteAll(input, 'https://x.com', '2027-01-15', 'January 15, 2027');
+    expect(out).toContain('© 2027');
   });
 });
 

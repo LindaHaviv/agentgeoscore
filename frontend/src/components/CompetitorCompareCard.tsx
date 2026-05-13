@@ -82,7 +82,7 @@ export function CompetitorCompareCard({ target }: Props) {
         competitors is instant.
       </p>
 
-      <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-2 mb-2">
+      <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3 mb-2">
         {Array.from({ length: SLOTS }).map((_, i) => (
           <input
             key={i}
@@ -92,14 +92,14 @@ export function CompetitorCompareCard({ target }: Props) {
             onChange={(e) => updateSlot(i, e.target.value)}
             placeholder={i === 0 ? 'competitor.com' : 'optional'}
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-paper-50 border border-rule rounded font-mono text-sm text-ink-900 placeholder-ink-300 focus:outline-none focus:border-terra-500 disabled:opacity-50"
+            className="flex-1 px-4 py-3 bg-paper border border-rule rounded font-mono text-sm text-ink-900 placeholder-ink-300 focus:outline-none focus:border-ink-700 disabled:opacity-50"
             aria-label={`Competitor ${i + 1}`}
           />
         ))}
         <button
           type="submit"
           disabled={!canSubmit}
-          className="px-6 py-3 bg-ink-900 text-paper-50 rounded font-display text-sm tracking-wide hover:bg-terra-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-ink-900 text-paper rounded font-display text-sm tracking-wide hover:bg-terra-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? 'Comparing…' : 'Compare'}
         </button>

@@ -80,20 +80,20 @@ export function TestPromptsCard({ bundle: initialBundle, domain }: Props) {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 min-w-0 sm:shrink-0">
           <label
             htmlFor="category-override"
-            className="text-xs text-ink-500 font-mono whitespace-nowrap"
+            className="text-xs text-ink-500 font-mono whitespace-nowrap shrink-0"
           >
             Not right?
           </label>
-          <div className="relative">
+          <div className="relative flex-1 min-w-0 sm:flex-none">
             <select
               id="category-override"
               value={bundle.detected_category.slug}
               onChange={(e) => handleCategoryChange(e.target.value)}
               disabled={loading}
-              className="appearance-none text-sm border border-ink-900 pl-3 pr-7 py-1 bg-paper text-ink-900 font-display tracking-tightish cursor-pointer hover:bg-paper-tint focus:outline-none focus:ring-2 focus:ring-terra/30 focus:ring-offset-1 focus:ring-offset-paper-soft disabled:opacity-50 disabled:cursor-not-allowed"
+              className="appearance-none w-full max-w-full sm:w-auto text-sm border border-ink-900 pl-3 pr-7 py-1 bg-paper text-ink-900 font-display tracking-tightish cursor-pointer hover:bg-paper-tint focus:outline-none focus:ring-2 focus:ring-terra/30 focus:ring-offset-1 focus:ring-offset-paper-soft disabled:opacity-50 disabled:cursor-not-allowed truncate"
             >
               {bundle.all_categories.map((c) => (
                 <option key={c.slug} value={c.slug}>
