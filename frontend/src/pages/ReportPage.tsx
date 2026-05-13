@@ -74,24 +74,24 @@ export default function ReportPage() {
 
           <div className="mt-16">
             <div className="rule mb-8" />
-            <div className="kicker mb-6">chapter — the breakdown</div>
+            <h2 className="kicker mb-6">chapter — the breakdown</h2>
             <CategoryBreakdown categories={report.categories} />
           </div>
 
           <div className="mt-16">
             <div className="rule mb-8" />
-            <div className="kicker mb-6">
+            <h2 className="kicker mb-6">
               chapter — what to fix, in order
               {' '}
               <span className="text-ink-300">({report.fixes.length})</span>
-            </div>
+            </h2>
             <FixList items={report.fixes} />
           </div>
 
           {report.test_prompts && (
             <div className="mt-16">
               <div className="rule mb-8" />
-              <div className="kicker mb-6">chapter — test it yourself</div>
+              <h2 className="kicker mb-6">chapter — test it yourself</h2>
               <TestPromptsCard
                 bundle={report.test_prompts}
                 domain={report.domain}
@@ -101,13 +101,13 @@ export default function ReportPage() {
 
           <div className="mt-16">
             <div className="rule mb-8" />
-            <div className="kicker mb-6">chapter — versus your competitors</div>
+            <h2 className="kicker mb-6">chapter — versus your competitors</h2>
             <CompetitorCompareCard target={report.domain} />
           </div>
 
           <div className="mt-16">
             <div className="rule mb-8" />
-            <div className="kicker mb-6">chapter — off-page signals</div>
+            <h2 className="kicker mb-6">chapter — off-page signals</h2>
             <RecommendationsCard />
           </div>
 

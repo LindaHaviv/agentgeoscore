@@ -21,7 +21,13 @@ describe('App shell', () => {
 
   it('renders the header wordmark on every route', () => {
     renderAt('/');
-    expect(screen.getByLabelText(/AgentGEOScore home/i)).toBeInTheDocument();
+    // The home link uses its visible text "AgentGEOScore · issue №1" as the
+    // accessible name (no aria-label override — would otherwise trip
+    // Lighthouse's label-content-name-mismatch audit).
+    // Accessible name comes from the split spans: "Agent GEO Score · issue №1".
+    expect(
+      screen.getByRole('link', { name: /Agent.*GEO.*Score/i }),
+    ).toHaveAttribute('href', '/');
   });
 
   it('renders the GitHub and GEO paper nav links', () => {
