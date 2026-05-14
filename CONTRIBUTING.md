@@ -124,8 +124,8 @@ CI runs the same checks plus the Playwright e2e suite and the
 built HTML, security.txt RFC 9116 compliance, predict-self-score against
 the rebuilt dist).
 
-If you're using Claude Code, Codex, or Cursor with the `web-pr-review`
-skill installed, ask for `/web-pr-review` (or "review my PR") and the
+If you're using an AI coding assistant with the `web-pr-review` skill
+installed, ask for `/web-pr-review` (or "review my PR") and the
 orchestrator will run the same gates plus a parallel review-swarm pass
 across intent / security / performance / contracts.
 
