@@ -1,0 +1,7 @@
+# Canonicalize commit authorship. GitHub respects .mailmap for the
+# displayed author / co-author on commit pages, PR commit listings, and
+# (partially) the contributors graph. Any commit whose author or
+# co-author trailer matches the email on the right is displayed under
+# the identity on the left.
+Linda Haviv <Linda.Haviv@gmail.com> <noreply@anthropic.com>
+Linda Haviv <Linda.Haviv@gmail.com> Claude <noreply@anthropic.com>
