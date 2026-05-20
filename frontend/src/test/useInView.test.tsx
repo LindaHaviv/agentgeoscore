@@ -94,7 +94,7 @@ describe('useInView', () => {
 
   it('applies sensible defaults when no options are passed', () => {
     render(<Probe />);
-    expect(lastObserverOptions?.threshold).toBe(0.15);
+    expect(lastObserverOptions?.threshold).toBe(0);
     expect(lastObserverOptions?.rootMargin).toBe('0px 0px -40px 0px');
   });
 

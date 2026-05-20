@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 /**
  * Reveal-on-scroll hook. Returns a ref to attach and a `shown` flag that
- * flips true the first time the element crosses the viewport threshold.
+ * flips true the first time the element enters the viewport root.
  * Once revealed it stays revealed — we never re-hide on scroll-out.
  *
  * If IntersectionObserver is unavailable (older test env, JSDOM without
@@ -32,7 +32,7 @@ export function useInView<T extends Element>(options?: {
         }
       },
       {
-        threshold: options?.threshold ?? 0.15,
+        threshold: options?.threshold ?? 0,
         rootMargin: options?.rootMargin ?? '0px 0px -40px 0px',
       }
     );
